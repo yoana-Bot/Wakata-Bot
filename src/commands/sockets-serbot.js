@@ -93,7 +93,7 @@ const connectionOptions = {
             },
             msgRetry,
             msgRetryCache, 
-            browser: ["Desktop", "Chrome", "2.0.0"],
+            browser: ["Ubuntu", "Chrome", "118.0.0.0"],
             version: version,
             generateHighQualityLinkPreview: true,
             markOnlineOnConnect: false,
