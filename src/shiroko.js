@@ -180,7 +180,7 @@ break
 }
 }
 } else {
-const prefixStr = typeof pluginPrefix === "string" ? pluginPrefix : ""
+const prefixStr = typeof pluginPrefix === "string" ? prefix : ""
 const regex = new RegExp(strRegex(prefixStr))
 match = [regex.exec(m.text), regex]
 }
@@ -244,10 +244,13 @@ global.db.data.chats[m.chat].primaryBot = null
 if (!isAccept) continue
 m.plugin = name
 if (isAccept) { global.db.data.users[m.sender].commands = (global.db.data.users[m.sender].commands || 0) + 1 }
+
+// --- SECCIÓN SOLUCIONADA: BAN CHAT / BOT OFF ---
 if (chat) {
 const botId = this.user.jid
 const primaryBotId = chat.primaryBot
-if (name !== "group-banchat.js" && chat?.isBanned && !isROwner) {
+// Se permite pasar si es el comando de ban/unban para que se pueda reactivar
+if (name !== "group-banchat.js" && chat?.isBanned && !isAdmin && !isROwner) {
 if (!primaryBotId || primaryBotId === botId) {
 const aviso = global.msg.aviso
 .replace('${botname}', global.botname)
@@ -262,6 +265,8 @@ if (!primaryBotId || primaryBotId === botId) {
 m.reply(mensaje)
 return
 }}}
+// --- FIN SECCIÓN SOLUCIONADA ---
+
 if (!isOwners && !m.chat.endsWith('g.us') && !/code|p|ping|qr|estado|status|infobot|botinfo|report|reportar|invite|join|logout|suggest|help|menu/gim.test(m.text)) return
 const adminMode = chat.modoadmin || false
 const wa = plugin.botAdmin || plugin.admin || plugin.group || plugin || noPrefix || pluginPrefix || m.text.slice(0, 1) === pluginPrefix || plugin.command
