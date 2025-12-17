@@ -71,8 +71,8 @@ global.welcomeConfig = {
 global.canalNombre = "【 ✰ 】𝗦𝗵𝗶𝗿𝗼𝗸𝗼 𝗕𝗼𝘁 - 𝗢𝗳𝗶𝗰𝗶𝗮𝗹"
 global.group = "https://chat.whatsapp.com/CN8JtNy0BTCHb2v5009AL5"
 global.channel = "https://whatsapp.com/channel/0029VbAmwbQBqbr587Zkni1a"
-global.github = "https://github.com/speed3xz/Akame-Bot"
-global.gmail = "211885527+speed3xz@users.noreply.github.com"
+global.github = "https://github.com/Arlette-Xz/Shiroko-Bot"
+global.gmail = "arlette.x7z@gmail.com"
 global.ch = {
     ch1: "120363402095978084@newsletter"
 }
