@@ -1,4 +1,4 @@
-import { smsg } from "../lib/simple.js"
+.import { smsg } from "../lib/simple.js"
 import { format } from "util"
 import { fileURLToPath } from "url"
 import path, { join } from "path"
@@ -245,11 +245,9 @@ if (!isAccept) continue
 m.plugin = name
 if (isAccept) { global.db.data.users[m.sender].commands = (global.db.data.users[m.sender].commands || 0) + 1 }
 
-// --- SECCIÓN SOLUCIONADA: BAN CHAT / BOT OFF ---
 if (chat) {
 const botId = this.user.jid
 const primaryBotId = chat.primaryBot
-// Se permite pasar si es el comando de ban/unban para que se pueda reactivar
 if (name !== "group-banchat.js" && chat?.isBanned && !isAdmin && !isROwner) {
 if (!primaryBotId || primaryBotId === botId) {
 const aviso = global.msg.aviso
