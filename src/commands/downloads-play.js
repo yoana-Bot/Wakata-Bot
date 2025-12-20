@@ -1,3 +1,7 @@
+// ▒█▀▀█ ▒█▀▀▀█ ▒█▀▀█ ▒█░░▒█ ▒█▀▀▀ ▀▀█▀▀ ▀▀█▀▀ ▒█▀▀▀ 
+// ▒█░░░ ▒█░░▒█ ▒█▄▄▀ ░▒█▒█░ ▒█▀▀▀ ░▒█░░ ░▒█░░ ▒█▀▀▀ 
+// ▒█▄▄█ ▒█▄▄▄█ ▒█░▒█ ░░▀▄▀░ ▒█▄▄▄ ░▒█░░ ░▒█░░ ▒█▄▄▄
+
 import yts from "yt-search"
 import { writeFileSync, existsSync, mkdirSync } from "fs"
 import { join, dirname } from "path"
