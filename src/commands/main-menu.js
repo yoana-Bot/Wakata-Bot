@@ -489,7 +489,7 @@ let handler = async (m, { conn, usedPrefix: _p, args, sender }) => {
 
   } catch (e) {
     conn.sendMessage(m.chat, {
-      text: `❌ Error en el menú:\n${e}`
+      text: `✰ Error en el menú:\n${e}`
     }, { quoted: m })
   }
 }
