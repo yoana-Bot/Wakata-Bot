@@ -7,43 +7,42 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 var handler = async (m, { usedPrefix, command }) => {
-try {
-conn.sendPresenceUpdate('composing', m.chat)
+    try {
+        conn.sendPresenceUpdate('composing', m.chat)
 
+        const commandsDir = path.join(__dirname, '../commands/')
 
-const commandsDir = path.join(__dirname, '../commands/')
+        if (!fs.existsSync(commandsDir)) {
+            return await conn.reply(m.chat, `⚠︎ El directorio de comandos no existe:\n> ${commandsDir}\n\nVerifica la ruta correcta.`, m)
+        }
 
+        const files = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'))
 
-if (!fs.existsSync(commandsDir)) {
-return await conn.reply(m.chat, `⚠︎ El directorio de comandos no existe:\n> ${commandsDir}\n\nVerifica la ruta correcta.`, m)
-}
+        if (files.length === 0) {
+            return await conn.reply(m.chat, '⚠︎ No se encontraron archivos .js en el directorio de comandos.', m)
+        }
 
-const files = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'))
+        let response = `ꕤ *Revisión de Syntax Errors:*\n\n`
+        let hasErrors = false
 
-if (files.length === 0) {
-return await conn.reply(m.chat, '⚠︎ No se encontraron archivos .js en el directorio de comandos.', m)
-}
+        for (const file of files) {
+            try {
+                // Se agrega un timestamp para evitar el cache del import y detectar cambios reales
+                await import(path.resolve(commandsDir, file) + '?update=' + Date.now())
+            } catch (error) {
+                hasErrors = true
+                response += `⚠︎ *Error en:* ${file}\n> ● Mensaje: ${error.message}\n\n`
+            }
+        }
 
-let response = `ꕤ *Revisión de Syntax Errors:*\n\n`
-let hasErrors = false
+        if (!hasErrors) {
+            response += 'ꕤ ¡Todo está en orden! No se detectaron errores de sintaxis.'
+        }
 
-for (const file of files) {
-try {
-await import(path.resolve(commandsDir, file))
-} catch (error) {
-hasErrors = true
-response += `⚠︎ *Error en:* ${file}\n\n> ● Mensaje: ${error.message}\n\n`
-}
-}
-
-if (!hasErrors) {
-response += 'ꕤ ¡Todo está en orden! No se detectaron errores de sintaxis'
-}
-
-await conn.reply(m.chat, response, m)
-} catch (err) {
-await conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${err.message}`, m)
-}
+        await conn.reply(m.chat, response, m)
+    } catch (err) {
+        await conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${err.message}`, m)
+    }
 }
 
 handler.command = ['syntax', 'detectar', 'errores']
