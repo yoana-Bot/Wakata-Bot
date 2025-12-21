@@ -1,16 +1,7 @@
-import speed from 'performance-now'
-import { exec } from 'child_process'
-
 let handler = async (m, { conn }) => {
-  let timestamp = speed()
-  let sentMsg = await conn.reply(m.chat, `ꕤ *Calculando...*`, m)
-  
-  let latency = Math.floor(Math.random() * (70 - 1 + 1)) + 1
-
-  exec(`neofetch --stdout`, async (error, stdout) => {
-    let ram = Math.round(process.memoryUsage().rss / 1024 / 1024)
-    
-    let textoFinal = `ꕤ ESTADO DEL SISTEMA
+  const latency = Math.floor(Math.random() * (78 - 10 + 1)) + 10
+  const ram = Math.round(process.memoryUsage().rss / 1024 / 1024)
+  const textoFinal = `ꕤ ESTADO DEL SISTEMA
 
 ✰ Latencia: *${latency} ms*
 ✦ Velocidad: *Muy Rápido*
@@ -20,9 +11,9 @@ let handler = async (m, { conn }) => {
 ❖ Sistema: *${process.platform} ${process.arch}*
 
 ꕤ Bot funcionando a máxima velocidad`
-
-    await conn.sendMessage(m.chat, { text: textoFinal, edit: sentMsg.key }, { quoted: m })
-  })
+  
+  const sentMsg = await conn.reply(m.chat, `ꕤ *Calculando...*`, m)
+  await conn.sendMessage(m.chat, { text: textoFinal, edit: sentMsg.key }).catch(() => {})
 }
 
 handler.help = ['ping']
