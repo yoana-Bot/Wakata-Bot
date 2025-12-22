@@ -44,8 +44,10 @@ if (!existsSync(tmpDir)) {
 await global.loadDatabase()
 
 const { state, saveState, saveCreds } = await useMultiFileAuthState(global.sessions)
-const msgRetryCounterCache = new NodeCache({ stdTTL: 0, checkperiod: 0 })
-const userDevicesCache = new NodeCache({ stdTTL: 0, checkperiod: 0 })
+
+const msgRetryCounterCache = new NodeCache({ stdTTL: 300, checkperiod: 120, useClones: false })
+const userDevicesCache = new NodeCache({ stdTTL: 600, checkperiod: 200, useClones: false })
+
 const { version } = await fetchLatestBaileysVersion()
 let phoneNumber = global.botNumber
 const methodCodeQR = process.argv.includes("qr")
@@ -63,10 +65,10 @@ if (methodCodeQR) {
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.sessions}/creds.json`)) {
     do {
         console.log('')
-        console.log(chalk.hex('#FFFFFF')('   Â¿CÃ³mo quieres conectar?'))
-        console.log(chalk.hex('#FFFFFF')('   ') + chalk.hex('#00FFFF')('1) ') + chalk.hex('#FFFFFF')('Usar cÃ³digo QR'))
-        console.log(chalk.hex('#FFFFFF')('   ') + chalk.hex('#00FFFF')('2) ') + chalk.hex('#FFFFFF')('Usar cÃ³digo de 8 dÃ­gitos'))
-        console.log(chalk.hex('#00FFFF')('   Â» Tu opciÃ³n: '))
+        console.log(chalk.hex('#FFFFFF')('   ¿Cómo quieres conectar?'))
+        console.log(chalk.hex('#FFFFFF')('   ') + chalk.hex('#00FFFF')('1) ') + chalk.hex('#FFFFFF')('Usar código QR'))
+        console.log(chalk.hex('#FFFFFF')('   ') + chalk.hex('#00FFFF')('2) ') + chalk.hex('#FFFFFF')('Usar código de 8 dígitos'))
+        console.log(chalk.hex('#00FFFF')('   » Tu opción: '))
         opcion = await question('')
         if (!/^[1-2]$/.test(opcion)) {
             console.log(chalk.red('   Solo opciones 1 o 2'))
@@ -98,17 +100,14 @@ const connectionOptions = {
     },
     msgRetryCounterCache: msgRetryCounterCache,
     userDevicesCache: userDevicesCache,
-    defaultQueryTimeoutMs: 5000,
+    defaultQueryTimeoutMs: 8000,
     cachedGroupMetadata: (jid) => global.conn?.chats?.[jid] ?? {},
     version: version,
-    keepAliveIntervalMs: 8000,
-    maxIdleTimeMs: 12000,
-    connectTimeoutMs: 10000,
+    keepAliveIntervalMs: 10000,
+    maxIdleTimeMs: 15000,
+    connectTimeoutMs: 15000,
     fireInitQueries: false,
-    txnUpdateTimeoutMs: 3000,
-    retryRequestDelayMs: 50,
-    maxMsgRetryCount: 2,
-    shouldIgnoreJid: (jid) => false,
+    shouldIgnoreJid: (jid) => jid.endsWith('@broadcast'),
     appStateMacVerification: {
         patch: false,
         snapshot: false
@@ -129,7 +128,7 @@ if (!fs.existsSync(`./${global.sessions}/creds.json`)) {
                 addNumber = String(phoneNumber).replace(/[^0-9]/g, '')
             } else {
                 do {
-                    console.log(chalk.hex('#00FFFF')('ðŸº INGRESAR NÃšMERO'))
+                    console.log(chalk.hex('#00FFFF')('🐺 INGRESAR NÚMERO'))
                     console.log(chalk.hex('#FFFFFF')('[+] '))
                     phoneNumber = await question('')
                     phoneNumber = String(phoneNumber).replace(/\D/g, '')
@@ -142,12 +141,12 @@ if (!fs.existsSync(`./${global.sessions}/creds.json`)) {
                 setTimeout(async () => {
                     let codeBot = await conn.requestPairingCode(addNumber)
                     codeBot = codeBot.match(/.{1,4}/g)?.join("-") || codeBot
-                    console.log(chalk.hex('#00FFFF')('ðŸ” CÃ“DIGO GENERADO'))
-                    console.log(chalk.hex('#00FFFF')('â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€'))
-                    console.log(chalk.hex('#FFFFFF')('â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—'))
-                    console.log(chalk.hex('#FFFFFF')('â•‘       ' + codeBot + '       â•‘'))
-                    console.log(chalk.hex('#FFFFFF')('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•'))
-                    console.log(chalk.hex('#00FFFF')('â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€'))
+                    console.log(chalk.hex('#00FFFF')('🔐 CÓDIGO GENERADO'))
+                    console.log(chalk.hex('#00FFFF')('──────────────────────────'))
+                    console.log(chalk.hex('#FFFFFF')('╔══════════════════════╗'))
+                    console.log(chalk.hex('#FFFFFF')('║       ' + codeBot + '       ║'))
+                    console.log(chalk.hex('#FFFFFF')('╚══════════════════════╝'))
+                    console.log(chalk.hex('#00FFFF')('──────────────────────────'))
                 }, 1000)
             }
         }
@@ -155,9 +154,9 @@ if (!fs.existsSync(`./${global.sessions}/creds.json`)) {
 }
 
 conn.isInit = false
-console.log(chalk.hex('#00FFFF')('â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—'))
-console.log(chalk.hex('#00FFFF').bold('â•‘         SHIROKO - LISTO        â•‘'))
-console.log(chalk.hex('#00FFFF')('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•'))
+console.log(chalk.hex('#00FFFF')('╔══════════════════════════════╗'))
+console.log(chalk.hex('#00FFFF').bold('║         SHIROKO - LISTO        ║'))
+console.log(chalk.hex('#00FFFF')('╚══════════════════════════════╝'))
 
 async function connectionUpdate(update) {
     const { connection, lastDisconnect, isNewLogin } = update
@@ -174,14 +173,14 @@ async function connectionUpdate(update) {
     
     if (update.qr != 0 && update.qr != undefined || methodCodeQR) {
         if (opcion == '1' || methodCodeQR) {
-            console.log(chalk.hex('#FFFFFF')(`[ é’ ]  Escanea este cÃ³digo QR`))
+            console.log(chalk.hex('#FFFFFF')(`[ 青 ]  Escanea este código QR`))
         }
     }
     
     if (connection === "open") {
         const userName = conn.user.name || conn.user.verifiedName || "Desconocido"
         await joinChannels(conn)
-        console.log(chalk.hex('#00FFFF')('[ é’ ] ') + chalk.hex('#FFFFFF')(`Conectado a: ${userName}`))
+        console.log(chalk.hex('#00FFFF')('[ 青 ] ') + chalk.hex('#FFFFFF')(`Conectado a: ${userName}`))
 
         const rutaJadi = join(__dirname, `./${global.jadi}`)
         if (existsSync(rutaJadi)) {
@@ -229,7 +228,7 @@ async function connectionUpdate(update) {
         if (existsSync(restartFile)) {
             try {
                 const data = JSON.parse(readFileSync(restartFile))
-                await conn.sendMessage(data.chat, { text: 'ê•¤ Reiniciado con Ã©xito, nuevamente en lÃ­nea.', edit: data.key })
+                await conn.sendMessage(data.chat, { text: 'ꕤ Reiniciado con éxito, nuevamente en línea.', edit: data.key })
                 unlinkSync(restartFile)
             } catch (e) {}
         }
@@ -261,12 +260,9 @@ global.reloadHandler = async function (restatConn) {
     }
     
     if (restatConn) {
-        const oldChats = global.conn.chats
-        try {
-            global.conn.ws.close()
-        } catch { }
+        try { global.conn.ws.close() } catch { }
         conn.ev.removeAllListeners()
-        global.conn = makeWASocket(connectionOptions, { chats: oldChats })
+        global.conn = makeWASocket(connectionOptions)
         isInit = true
     }
     
@@ -285,10 +281,10 @@ global.reloadHandler = async function (restatConn) {
     }
 
     setInterval(() => {
-        if (global.processedMessages && global.processedMessages.size > 1000) {
+        if (global.processedMessages && global.processedMessages.size > 500) {
             global.processedMessages.clear()
         }
-    }, 60000)
+    }, 120000)
 
     conn.ev.on('messages.upsert', conn.handler)
     conn.ev.on('connection.update', conn.connectionUpdate)
@@ -327,7 +323,7 @@ async function loadCommandsFromFolders() {
                         global.plugins[pluginName] = module.default || module
                     } catch (e) {
                         const pluginName = getRelativePluginName(fullPath)
-                        console.error(chalk.red(`âœ— Error al cargar ${pluginName}: ${e.message}`))
+                        console.error(chalk.red(`✗ Error al cargar ${pluginName}: ${e.message}`))
                     }
                 }
             }
@@ -336,7 +332,7 @@ async function loadCommandsFromFolders() {
         }
     }
     await loadFolder(commandsFolder)
-    console.log(chalk.hex('#00FFFF')(`âœ“ Comandos cargados: ${Object.keys(global.plugins).length}`))
+    console.log(chalk.hex('#00FFFF')(`✓ Comandos cargados: ${Object.keys(global.plugins).length}`))
 }
 
 loadCommandsFromFolders().then((_) => Object.keys(global.plugins)).catch(console.error)
@@ -358,7 +354,7 @@ async function _reloadCore(_ev, filename) {
                 try {
                     const module = await import(`${global.__filename(dir)}?update=${Date.now()}`)
                     if (pluginName in global.plugins) {
-                        console.log(chalk.white('ê•¤ ') + chalk.hex('#00FFFF')('Cambio Realizado en ') + chalk.white(`"${pluginName}" `) + chalk.hex('#00FFFF')('con Ã©xito.'))
+                        console.log(chalk.white('ꕤ ') + chalk.hex('#00FFFF')('Cambio Realizado en ') + chalk.white(`"${pluginName}" `) + chalk.hex('#00FFFF')('con éxito.'))
                     }
                     global.plugins[pluginName] = module.default || module
                 } catch (e) {
@@ -414,7 +410,7 @@ await global.reloadHandler()
 if (!global.opts['test']) {
     if (global.db) setInterval(async () => {
         if (global.db.data) await global.db.write()
-    }, 30 * 1000)
+    }, 60 * 1000)
 }
 
 setInterval(async () => {
@@ -425,7 +421,7 @@ setInterval(async () => {
             filenames.forEach(file => {
                 const filePath = join(tmpDir, file)
                 if (statSync(filePath).isFile()) {
-                    const isSession = filePath.toLowerCase().includes('session') || filePath.toLowerCase().includes('creds')
+                    const isSession = /session|creds/i.test(file)
                     if (!isSession && file !== 'config.json') {
                         unlinkSync(filePath)
                     }
@@ -433,7 +429,8 @@ setInterval(async () => {
             })
         }
     } catch {}
-}, 60 * 1000)
+    if (global.gc) global.gc()
+}, 180000)
 
 async function _quickTest() {
     const test = await Promise.all([
@@ -465,6 +462,11 @@ _quickTest().catch(console.error)
 async function isValidPhoneNumber(number) {
     try {
         let num = String(number).replace(/\s+/g, '')
+        if (num.startsWith('+521')) {
+            num = num.replace('+521', '+52')
+        } else if (num.startsWith('+52') && num[4] === '1') {
+            num = num.replace('+521', '+52')
+        }
         const parsedNumber = phoneUtil.parseAndKeepRawInput(num)
         return phoneUtil.isValidNumber(parsedNumber)
     } catch (error) {
