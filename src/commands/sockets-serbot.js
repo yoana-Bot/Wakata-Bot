@@ -1,12 +1,13 @@
 // Made with love by Arlette Xz
 // Inspirado en el jadibot de GataBot
 // Código Hecho para Shiroko-Bot
-const { 
+
+import { 
     useMultiFileAuthState, 
     DisconnectReason, 
     makeCacheableSignalKeyStore, 
     fetchLatestBaileysVersion 
-} = (await import("@whiskeysockets/baileys"))
+} from "@whiskeysockets/baileys"
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
 import fs from "fs"
@@ -53,6 +54,8 @@ export async function shirokoJadiBot(options) {
     const { state, saveCreds } = await useMultiFileAuthState(pathshirokoJadiBot)
     const { version } = await fetchLatestBaileysVersion()
 
+    let isSent = false 
+
     const connectionOptions = {
         logger: pino({ level: "silent" }),
         printQRInTerminal: false,
@@ -76,12 +79,17 @@ export async function shirokoJadiBot(options) {
     async function connectionUpdate(update) {
         const { connection, lastDisconnect, qr } = update
         
-        if (qr && fromCommand) {
+        if (qr && fromCommand && !isSent) {
             if (mcode) {
-                let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
-                secret = secret.match(/.{1,4}/g)?.join("-")
-                await conn.sendMessage(m.chat, { text: rtx2 }, { quoted: m })
-                await conn.sendMessage(m.chat, { text: secret }, { quoted: m })
+                isSent = true 
+                try {
+                    let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
+                    secret = secret.match(/.{1,4}/g)?.join("-")
+                    await conn.sendMessage(m.chat, { text: rtx2 }, { quoted: m })
+                    await conn.sendMessage(m.chat, { text: secret }, { quoted: m })
+                } catch (e) {
+                    isSent = false
+                }
             } else {
                 await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: rtx }, { quoted: m })
             }
@@ -89,6 +97,7 @@ export async function shirokoJadiBot(options) {
 
         if (connection === 'open') {
             sock.isInit = true
+            isSent = true
             const user = sock.user.id.split(':')[0]
             
             if (!global.conns.some(s => s.user && s.user.id.split(':')[0] === user)) {
@@ -115,6 +124,7 @@ export async function shirokoJadiBot(options) {
                 let i = global.conns.indexOf(sock)
                 if (i >= 0) global.conns.splice(i, 1)
             } else {
+                sock.ev.removeAllListeners()
                 setTimeout(() => shirokoJadiBot(options), 10000)
             }
         }
