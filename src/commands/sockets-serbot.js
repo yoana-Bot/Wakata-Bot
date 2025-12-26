@@ -33,7 +33,7 @@ import { Boom } from '@hapi/boom'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-let rtx = '✿ *VINCULACIÓN VÍA CÓDIGO QR*\n\n'
+let rtx = '✿ *Vincula tu cuenta usando el QR.*\n\n'
 rtx += '[ ✰ ] Instrucciones:\n'
 rtx += '*1 » Opciones adicionales*\n'
 rtx += '*2 » Dispositivos vinculados*\n'
@@ -41,7 +41,7 @@ rtx += '*3 » Vincular nuevo dispositivo*\n'
 rtx += '*4 » Escanear código QR*\n\n'
 rtx += '> *Nota:* Código válido por 30 segundos'
 
-let rtx2 = '✿ *VINCULACIÓN VÍA CÓDIGO NUMÉRICO*\n\n'
+let rtx2 = '✿ *Vincula tu cuenta usando el código.*\n\n'
 rtx2 += '[ ✰ ] Instrucciones:\n'
 rtx2 += '*1 » Opciones adicionales*\n'
 rtx2 += '*2 » Dispositivos vinculados*\n'
@@ -61,7 +61,7 @@ function msToTime(duration) {
 export async function shirokoJadiBot(options) {
     let { pathshirokoJadiBot, m, conn, args, usedPrefix, command, fromCommand } = options
     const mcode = (command === 'code' || (args && args.includes('--code')))
-    const userId = m.sender.split`@`[0]
+    const userId = m?.sender ? m.sender.split`@`[0] : path.basename(pathshirokoJadiBot)
     
     if (!global.conns[userId]) global.conns[userId] = { retries: 0 }
     
@@ -87,16 +87,6 @@ export async function shirokoJadiBot(options) {
     let sock = makeWASocket(connectionOptions)
     sock.isInit = false
 
-    let autoLimpieza = setTimeout(async () => {
-        if (!sock.user) {
-            console.log(chalk.hex('#FF0000')(`[ AUTO-LIMPIEZA ] `) + chalk.hex('#FFFFFF')(`Sesión inactiva: +${userId}`))
-            try { sock.ws.close() } catch {}
-            sock.ev.removeAllListeners()
-            fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true })
-            delete global.conns[userId]
-        }
-    }, 60000)
-
     async function connectionUpdate(update) {
         const { connection, lastDisconnect, qr } = update
         
@@ -120,7 +110,6 @@ export async function shirokoJadiBot(options) {
         }
 
         if (connection === 'open') {
-            clearTimeout(autoLimpieza)
             global.conns[userId].retries = 0 
             sock.isInit = true
             global.isSent[userId] = true
@@ -142,27 +131,25 @@ export async function shirokoJadiBot(options) {
 
         if (connection === 'close') {
             const reason = new Boom(lastDisconnect?.error)?.output?.statusCode
-            const botId = path.basename(pathshirokoJadiBot)
-
+            
             if (reason === DisconnectReason.loggedOut || reason === 401) {
-                console.log(chalk.hex('#FF0000')(`[ SESIÓN FINALIZADA ] `) + chalk.hex('#FFFFFF')(`+${botId} Borrando datos...`))
                 try { 
                     sock.ws.close()
                     sock.ev.removeAllListeners()
-                    fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true }) 
+                    if (fs.existsSync(pathshirokoJadiBot)) {
+                        fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true }) 
+                    }
                 } catch (e) {}
                 let i = global.conns.indexOf(sock)
                 if (i >= 0) global.conns.splice(i, 1)
                 delete global.isSent[userId]
                 delete global.conns[userId]
             } else {
-                if (global.conns[userId] && global.conns[userId].retries < 3) {
+                if (global.conns[userId] && global.conns[userId].retries < 2) {
                     global.conns[userId].retries++
-                    console.log(chalk.yellow(`[ REINTENTO ${global.conns[userId].retries}/3 ] +${userId}`))
                     try { sock.ws.close(); sock.ev.removeAllListeners() } catch {}
-                    setTimeout(() => shirokoJadiBot(options), 10000)
+                    setTimeout(() => shirokoJadiBot(options), 15000)
                 } else {
-                    console.log(chalk.hex('#FF0000')(`[ RAM PROTECT ] `) + chalk.hex('#FFFFFF')(`Deteniendo +${userId} por fallos.`))
                     delete global.conns[userId]
                 }
             }
