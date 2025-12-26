@@ -49,6 +49,7 @@ rtx2 += '*3 » Vincular nuevo dispositivo*\n'
 rtx2 += '*4 » Vincular usando número*\n\n'
 rtx2 += '> *Nota:* Código exclusivo para este número'
 
+
 if (!(global.conns instanceof Array)) global.conns = []
 if (!global.isSent) global.isSent = {} 
 
@@ -121,7 +122,7 @@ export async function shirokoJadiBot(options) {
             
             console.log(chalk.hex('#00FFFF')(`\n[ SUB-BOT ] `) + chalk.hex('#FFFFFF')(`+${user} Conectado correctamente.`))
             
-            if (fromCommand && m) {
+            if (fromCommand && m && m.chat) {
                 await conn.sendMessage(m.chat, { 
                     text: `❀ Has registrado un nuevo *Sub-Bot!* [@${userId}]\n\n> Puedes ver la información del bot usando el comando *${usedPrefix}infobot*`,
                     mentions: [m.sender]
@@ -145,7 +146,7 @@ export async function shirokoJadiBot(options) {
                 delete global.isSent[userId]
                 delete global.conns[userId]
             } else {
-                if (global.conns[userId] && global.conns[userId].retries < 2) {
+                if (global.conns[userId] && global.conns[userId].retries < 3) {
                     global.conns[userId].retries++
                     try { sock.ws.close(); sock.ev.removeAllListeners() } catch {}
                     setTimeout(() => shirokoJadiBot(options), 15000)
