@@ -33,27 +33,37 @@ import { Boom } from '@hapi/boom'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-let rtx = "✿ *Vincula tu cuenta usando el QR.*\n\n[ ✰ ] Sigue las instrucciones:\n*1 » Mas opciones*\n*2 » Dispositivos vinculados*\n*3 » Vincular nuevo dispositivo*\n*4 » Escanea este QR*\n\n> *Nota:* Este código QR expira en 30 segundos."
-let rtx2 = "✿ *Vincula tu cuenta usando el código.*\n\n[ ✰ ] Sigue las instrucciones:\n*1 » Mas opciones*\n*2 » Dispositivos vinculados*\n*3 » Vincular nuevo dispositivo*\n*4 » Vincular usando numero*\n\n> *Nota:* Este Código solo funciona en el número que lo solicita"
+let rtx = '✿ *VINCULACIÓN VÍA CÓDIGO QR*\n\n'
+rtx += '[ ✰ ] Instrucciones:\n'
+rtx += '*1 » Opciones adicionales*\n'
+rtx += '*2 » Dispositivos vinculados*\n'
+rtx += '*3 » Vincular nuevo dispositivo*\n'
+rtx += '*4 » Escanear código QR*\n\n'
+rtx += '> *Nota:* Código válido por 30 segundos'
+
+let rtx2 = '✿ *VINCULACIÓN VÍA CÓDIGO NUMÉRICO*\n\n'
+rtx2 += '[ ✰ ] Instrucciones:\n'
+rtx2 += '*1 » Opciones adicionales*\n'
+rtx2 += '*2 » Dispositivos vinculados*\n'
+rtx2 += '*3 » Vincular nuevo dispositivo*\n'
+rtx2 += '*4 » Vincular usando número*\n\n'
+rtx2 += '> *Nota:* Código exclusivo para este número'
 
 if (!(global.conns instanceof Array)) global.conns = []
 if (!global.isSent) global.isSent = {} 
 
 function msToTime(duration) {
-    var milliseconds = parseInt((duration % 1000) / 100),
-        seconds = Math.floor((duration / 1000) % 60),
-        minutes = Math.floor((duration / (1000 * 60)) % 60),
-        hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-    hours = (hours < 10) ? "0" + hours : hours
-    minutes = (minutes < 10) ? "0" + minutes : minutes
-    seconds = (seconds < 10) ? "0" + seconds : seconds
-    return minutes + " m y " + seconds + " s "
+    var seconds = Math.floor((duration / 1000) % 60),
+        minutes = Math.floor((duration / (1000 * 60)) % 60)
+    return `${minutes} m y ${seconds} s`
 }
 
 export async function shirokoJadiBot(options) {
     let { pathshirokoJadiBot, m, conn, args, usedPrefix, command, fromCommand } = options
     const mcode = (command === 'code' || (args && args.includes('--code')))
     const userId = m.sender.split`@`[0]
+    
+    if (!global.conns[userId]) global.conns[userId] = { retries: 0 }
     
     const { state, saveCreds } = await useMultiFileAuthState(pathshirokoJadiBot)
     const { version } = await fetchLatestBaileysVersion()
@@ -70,9 +80,8 @@ export async function shirokoJadiBot(options) {
         markOnlineOnConnect: false,
         syncFullHistory: false,
         msgRetryCounterCache: new NodeCache(),
-        connectTimeoutMs: 60000,
-        defaultQueryTimeoutMs: 0,
-        keepAliveIntervalMs: 10000
+        connectTimeoutMs: 30000,
+        keepAliveIntervalMs: 15000
     }
 
     let sock = makeWASocket(connectionOptions)
@@ -80,12 +89,11 @@ export async function shirokoJadiBot(options) {
 
     let autoLimpieza = setTimeout(async () => {
         if (!sock.user) {
-            console.log(chalk.redBright(`[ AUTO-LIMPIEZA ] Sesión expirada en: +${userId}.`))
+            console.log(chalk.hex('#FF0000')(`[ AUTO-LIMPIEZA ] `) + chalk.hex('#FFFFFF')(`Sesión inactiva: +${userId}`))
             try { sock.ws.close() } catch {}
             sock.ev.removeAllListeners()
             fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true })
-            let i = global.conns.indexOf(sock)
-            if (i >= 0) global.conns.splice(i, 1)
+            delete global.conns[userId]
         }
     }, 60000)
 
@@ -103,22 +111,26 @@ export async function shirokoJadiBot(options) {
                 } catch (e) { global.isSent[userId] = false }
             } else {
                 try {
-                    await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: rtx }, { quoted: m })
+                    await conn.sendMessage(m.chat, { 
+                        image: await qrcode.toBuffer(qr, { scale: 8 }), 
+                        caption: rtx 
+                    }, { quoted: m })
                 } catch (e) { global.isSent[userId] = false }
             }
         }
 
         if (connection === 'open') {
             clearTimeout(autoLimpieza)
+            global.conns[userId].retries = 0 
             sock.isInit = true
             global.isSent[userId] = true
-            const userJid = sock.user.id.split(':')[0]
+            const user = sock.user.id.split(':')[0]
             
-            if (!global.conns.some(s => s.user && s.user.id.split(':')[0] === userJid)) {
+            if (!global.conns.some(s => s.user && s.user.id.split(':')[0] === user)) {
                 global.conns.push(sock)
             }
             
-            console.log(chalk.cyanBright(`\n[ SUB-BOT ] `) + chalk.white(`+${userJid} Conectado correctamente.`))
+            console.log(chalk.hex('#00FFFF')(`\n[ SUB-BOT ] `) + chalk.hex('#FFFFFF')(`+${user} Conectado correctamente.`))
             
             if (fromCommand && m) {
                 await conn.sendMessage(m.chat, { 
@@ -133,17 +145,26 @@ export async function shirokoJadiBot(options) {
             const botId = path.basename(pathshirokoJadiBot)
 
             if (reason === DisconnectReason.loggedOut || reason === 401) {
-                console.log(chalk.red(`[ SESIÓN INVÁLIDA ] `) + chalk.white(`+${botId} Borrando datos...`))
+                console.log(chalk.hex('#FF0000')(`[ SESIÓN FINALIZADA ] `) + chalk.hex('#FFFFFF')(`+${botId} Borrando datos...`))
                 try { 
+                    sock.ws.close()
                     sock.ev.removeAllListeners()
                     fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true }) 
                 } catch (e) {}
                 let i = global.conns.indexOf(sock)
                 if (i >= 0) global.conns.splice(i, 1)
                 delete global.isSent[userId]
+                delete global.conns[userId]
             } else {
-                sock.ev.removeAllListeners()
-                setTimeout(() => shirokoJadiBot(options), 10000)
+                if (global.conns[userId] && global.conns[userId].retries < 3) {
+                    global.conns[userId].retries++
+                    console.log(chalk.yellow(`[ REINTENTO ${global.conns[userId].retries}/3 ] +${userId}`))
+                    try { sock.ws.close(); sock.ev.removeAllListeners() } catch {}
+                    setTimeout(() => shirokoJadiBot(options), 10000)
+                } else {
+                    console.log(chalk.hex('#FF0000')(`[ RAM PROTECT ] `) + chalk.hex('#FFFFFF')(`Deteniendo +${userId} por fallos.`))
+                    delete global.conns[userId]
+                }
             }
         }
     }
@@ -161,14 +182,14 @@ export async function shirokoJadiBot(options) {
 }
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    if (!globalThis.db.data.settings[conn.user.jid]?.jadibotmd) return m.reply(`ꕥ El Comando *${command}* está desactivado.`)
+    if (!globalThis.db.data.settings[conn.user.jid]?.jadibotmd) return m.reply(`ꕤ El Comando *${command}* está desactivado.`)
     
     let user = global.db.data.users[m.sender]
     let time = (user.Subs || 0) + 120000
-    if (new Date() - (user.Subs || 0) < 120000) return conn.reply(m.chat, `ꕥ Debes esperar ${msToTime(time - new Date())} para volver a vincular un *Sub-Bot.*`, m)
+    if (new Date() - (user.Subs || 0) < 120000) return conn.reply(m.chat, `ꕤ Debes esperar ${msToTime(time - new Date())} para volver a vincular un *Sub-Bot.*`, m)
     
     let socklimit = global.conns.filter(sock => sock?.user).length
-    if (socklimit >= 50) return m.reply(`ꕥ No hay espacios disponibles para Sub-Bots.`)
+    if (socklimit >= 50) return m.reply(`ꕤ No hay espacios disponibles para Sub-Bots.`)
 
     let id = `${m.sender.split`@`[0]}`
     let pathshirokoJadiBot = path.join(`./${global.jadi}/`, id)
@@ -181,4 +202,4 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 }
 
 handler.command = ['qr', 'code']
-export default handler 
+export default handler
