@@ -49,7 +49,6 @@ rtx2 += '*3 » Vincular nuevo dispositivo*\n'
 rtx2 += '*4 » Vincular usando número*\n\n'
 rtx2 += '> *Nota:* Código exclusivo para este número'
 
-
 if (!(global.conns instanceof Array)) global.conns = []
 if (!global.isSent) global.isSent = {} 
 
@@ -59,12 +58,32 @@ function msToTime(duration) {
     return `${minutes} m y ${seconds} s`
 }
 
+function cleanInactiveSessions() {
+    const sessionPath = path.join(`./${global.jadi}/`)
+    if (!fs.existsSync(sessionPath)) return
+    
+    const files = fs.readdirSync(sessionPath)
+    const now = Date.now()
+    const oneDay = 24 * 60 * 60 * 1000
+
+    files.forEach(file => {
+        const filePath = path.join(sessionPath, file)
+        const stats = fs.statSync(filePath)
+        if (now - stats.mtimeMs > oneDay) {
+            fs.rmSync(filePath, { recursive: true, force: true })
+            console.log(chalk.yellow(`[ LIMPIEZA ] Sesión inactiva eliminada: ${file}`))
+        }
+    })
+}
+
 export async function shirokoJadiBot(options) {
     let { pathshirokoJadiBot, m, conn, args, usedPrefix, command, fromCommand } = options
     const mcode = (command === 'code' || (args && args.includes('--code')))
     const userId = m?.sender ? m.sender.split`@`[0] : path.basename(pathshirokoJadiBot)
     
-    if (!global.conns[userId]) global.conns[userId] = { retries: 0 }
+    if (global.conns[userId]?.sock) {
+        try { global.conns[userId].sock.ws.close() } catch {}
+    }
     
     const { state, saveCreds } = await useMultiFileAuthState(pathshirokoJadiBot)
     const { version } = await fetchLatestBaileysVersion()
@@ -86,6 +105,7 @@ export async function shirokoJadiBot(options) {
     }
 
     let sock = makeWASocket(connectionOptions)
+    let startTime = Math.floor(Date.now() / 1000)
     sock.isInit = false
 
     async function connectionUpdate(update) {
@@ -94,12 +114,14 @@ export async function shirokoJadiBot(options) {
         if (qr && fromCommand && !global.isSent[userId]) {
             global.isSent[userId] = true 
             if (mcode) {
-                try {
-                    let secret = await sock.requestPairingCode(userId)
-                    secret = secret.match(/.{1,4}/g)?.join("-")
-                    await conn.sendMessage(m.chat, { text: rtx2 }, { quoted: m })
-                    await conn.sendMessage(m.chat, { text: secret }, { quoted: m })
-                } catch (e) { global.isSent[userId] = false }
+                setTimeout(async () => {
+                    try {
+                        let secret = await sock.requestPairingCode(userId)
+                        secret = secret.match(/.{1,4}/g)?.join("-")
+                        await conn.sendMessage(m.chat, { text: rtx2 }, { quoted: m })
+                        await conn.sendMessage(m.chat, { text: secret }, { quoted: m })
+                    } catch (e) { global.isSent[userId] = false }
+                }, 3000)
             } else {
                 try {
                     await conn.sendMessage(m.chat, { 
@@ -111,11 +133,11 @@ export async function shirokoJadiBot(options) {
         }
 
         if (connection === 'open') {
-            global.conns[userId].retries = 0 
             sock.isInit = true
             global.isSent[userId] = true
             const user = sock.user.id.split(':')[0]
             
+            global.conns[userId] = { sock, retries: 0 }
             if (!global.conns.some(s => s.user && s.user.id.split(':')[0] === user)) {
                 global.conns.push(sock)
             }
@@ -141,18 +163,10 @@ export async function shirokoJadiBot(options) {
                         fs.rmSync(pathshirokoJadiBot, { recursive: true, force: true }) 
                     }
                 } catch (e) {}
-                let i = global.conns.indexOf(sock)
-                if (i >= 0) global.conns.splice(i, 1)
                 delete global.isSent[userId]
                 delete global.conns[userId]
             } else {
-                if (global.conns[userId] && global.conns[userId].retries < 3) {
-                    global.conns[userId].retries++
-                    try { sock.ws.close(); sock.ev.removeAllListeners() } catch {}
-                    setTimeout(() => shirokoJadiBot(options), 15000)
-                } else {
-                    delete global.conns[userId]
-                }
+                setTimeout(() => shirokoJadiBot(options), 15000)
             }
         }
     }
@@ -163,13 +177,23 @@ export async function shirokoJadiBot(options) {
     try {
         let handlerFile = await import('../shiroko.js')
         sock.handler = handlerFile.handler.bind(sock)
-        sock.ev.on('messages.upsert', sock.handler)
+        
+        sock.ev.on('messages.upsert', async (chatUpdate) => {
+            for (let msg of chatUpdate.messages) {
+                if (!msg.message) continue
+                let msgTime = msg.messageTimestamp
+                if (msgTime < startTime) continue 
+                await sock.handler(chatUpdate)
+            }
+        })
     } catch (e) {}
 
     return true
 }
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
+    cleanInactiveSessions()
+    
     if (!globalThis.db.data.settings[conn.user.jid]?.jadibotmd) return m.reply(`ꕤ El Comando *${command}* está desactivado.`)
     
     let user = global.db.data.users[m.sender]
