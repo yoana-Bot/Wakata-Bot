@@ -25,7 +25,7 @@ let handler = async (m, { conn, args, usedPrefix }) => {
 ❒ *Host:* ${host}
 ❒ *Conectado a:* Sky
 ❒ *Tipo:* ${tipoBot}
-❒ *Dueño:* @${conn.user.jid.split('@')[0]}
+❒ *Dueño:* Oculto por privacidad.
 
 > *Canal* \`${canal}\`
 `.trim()
