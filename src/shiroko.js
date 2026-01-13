@@ -31,14 +31,16 @@ export async function handler(chatUpdate) {
         if (!m || m.isBaileys) return
         m.exp = 0
 
+        const { sender, chat: mChat, name: mName } = m
+
         try {
-            if (!global.db.data.users[m.sender]) {
-                global.db.data.users[m.sender] = {
-                    name: m.name, exp: 0, coin: 0, bank: 0, level: 0, health: 100, genre: "", birth: "", marry: "", description: "", packstickers: null, premium: false, premiumTime: 0, banned: false, bannedReason: "", commands: 0, afk: -1, afkReason: "", warn: 0
+            if (!global.db.data.users[sender]) {
+                global.db.data.users[sender] = {
+                    name: mName, exp: 0, coin: 0, bank: 0, level: 0, health: 100, genre: "", birth: "", marry: "", description: "", packstickers: null, premium: false, premiumTime: 0, banned: false, bannedReason: "", commands: 0, afk: -1, afkReason: "", warn: 0
                 }
             }
-            if (!global.db.data.chats[m.chat]) {
-                global.db.data.chats[m.chat] = {
+            if (!global.db.data.chats[mChat]) {
+                global.db.data.chats[mChat] = {
                     isBanned: false, isMute: false, welcome: global.modes.welcome, sWelcome: "", sBye: "", detect: global.modes.detect, primaryBot: null, modoadmin: global.modes.modoadmin, antiLink: global.modes.antilink, nsfw: global.modes.nsfw, economy: global.modes.economy, gacha: global.modes.gacha
                 }
             }
@@ -52,20 +54,21 @@ export async function handler(chatUpdate) {
         }
 
         if (typeof m.text !== "string") m.text = ""
-        const user = global.db.data.users[m.sender]
-        const chat = global.db.data.chats[m.chat]
+        const user = global.db.data.users[sender]
+        const chat = global.db.data.chats[mChat]
         const settings = global.db.data.settings[this.user.jid]
         
-        const isROwner = global.owner.some(num => num.replace(/[^0-9]/g, "") + "@s.whatsapp.net" === m.sender) || m.fromMe
+        const isROwner = global.owner.some(num => num.replace(/[^0-9]/g, "") + "@s.whatsapp.net" === sender) || m.fromMe
         const isOwner = isROwner
-        const isPrems = isROwner || global.prems.some(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net" === m.sender) || user.premium
-        const isOwners = [this.user.jid, ...global.owner.map(v => v + "@s.whatsapp.net")].includes(m.sender)
+        const isPrems = isROwner || global.prems.some(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net" === sender) || user.premium
+        const isOwners = [this.user.jid, ...global.owner.map(v => v + "@s.whatsapp.net")].includes(sender)
 
         if (opts["queque"] && m.text && !isPrems) {
             const queque = this.msgqueque
-            queque.push(m.id || m.key.id)
+            const mId = m.id || m.key.id
+            queque.push(mId)
             setTimeout(() => {
-                const index = queque.indexOf(m.id || m.key.id)
+                const index = queque.indexOf(mId)
                 if (index !== -1) queque.splice(index, 1)
             }, 2000)
         }
@@ -76,16 +79,16 @@ export async function handler(chatUpdate) {
 
         if (m.isGroup) {
             const now = Date.now()
-            const cached = groupMetadataCache.get(m.chat)
+            const cached = groupMetadataCache.get(mChat)
             if (cached && (now - cached.timestamp) < 25000) {
                 groupMetadata = cached.metadata
                 participants = cached.participants
             } else {
-                groupMetadata = await this.groupMetadata(m.chat).catch(() => ({}))
+                groupMetadata = await this.groupMetadata(mChat).catch(() => ({}))
                 participants = (groupMetadata.participants || []).map(p => ({ id: p.jid, jid: p.jid, lid: p.lid, admin: p.admin }))
-                groupMetadataCache.set(m.chat, { metadata: groupMetadata, participants, timestamp: now })
+                groupMetadataCache.set(mChat, { metadata: groupMetadata, participants, timestamp: now })
             }
-            userGroup = participants.find(u => this.decodeJid(u.jid) === m.sender) || {}
+            userGroup = participants.find(u => this.decodeJid(u.jid) === sender) || {}
             botGroup = participants.find(u => this.decodeJid(u.jid) === this.user.jid) || {}
         } else {
             participants = []; userGroup = {}; botGroup = {}
@@ -96,18 +99,19 @@ export async function handler(chatUpdate) {
         const isBotAdmin = botGroup?.admin || false
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./commands")
 
+        const strRegex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
+
         for (const name in global.plugins) {
             const plugin = global.plugins[name]
             if (!plugin || plugin.disabled) continue
             const __filename = join(___dirname, name)
 
             if (typeof plugin.all === "function") {
-                plugin.all.call(this, m, { chatUpdate, __dirname: ___dirname, __filename, user, chat, settings }).catch(console.error)
+                await plugin.all.call(this, m, { chatUpdate, __dirname: ___dirname, __filename, user, chat, settings }).catch(console.error)
             }
 
             if (!opts["restrict"] && plugin.tags?.includes("admin")) continue
 
-            const strRegex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
             const pluginPrefix = plugin.customPrefix || this.prefix || global.prefix
             let match
 
@@ -119,7 +123,8 @@ export async function handler(chatUpdate) {
                 }
             } else {
                 const regex = pluginPrefix instanceof RegExp ? pluginPrefix : new RegExp(strRegex(pluginPrefix))
-                match = [regex.exec(m.text), regex]
+                const execResult = regex.exec(m.text)
+                if (execResult) match = [execResult, regex]
             }
 
             if (typeof plugin.before === "function") {
@@ -130,9 +135,9 @@ export async function handler(chatUpdate) {
 
             if (match && match[0] && (usedPrefix = match[0][0])) {
                 const noPrefix = m.text.replace(usedPrefix, "")
-                let [command, ...args] = noPrefix.trim().split(" ").filter(v => v)
+                let [command, ...args] = noPrefix.trim().split(/\s+/).filter(v => v)
                 args = args || []
-                let _args = noPrefix.trim().split(" ").slice(1)
+                let _args = noPrefix.trim().split(/\s+/).slice(1)
                 let text = _args.join(" ")
                 command = (command || "").toLowerCase()
 
@@ -191,7 +196,7 @@ export async function handler(chatUpdate) {
 
                 m.isCommand = true
                 m.exp += plugin.exp ? parseInt(plugin.exp) : 10
-                let extra = { match, usedPrefix, noPrefix, _args, args, command, text, conn: this, participants, groupMetadata, userGroup, botGroup, isROwner, isOwner, isRAdmin, isAdmin, isBotAdmin, isPrems, chatUpdate, __dirname: ___dirname, __filename, user, chat, settings }
+                const extra = { match, usedPrefix, noPrefix, _args, args, command, text, conn: this, participants, groupMetadata, userGroup, botGroup, isROwner, isOwner, isRAdmin, isAdmin, isBotAdmin, isPrems, chatUpdate, __dirname: ___dirname, __filename, user, chat, settings }
 
                 try {
                     await plugin.call(this, m, extra)
