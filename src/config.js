@@ -68,7 +68,7 @@ global.welcomeConfig = {
 //  REDES SOCIALES
 // ─────────────────────────────
 
-global.canalNombre = "【 ✰ 】𝗦𝗵𝗶𝗿𝗼𝗸𝗼 𝗕𝗼𝘁 - 𝗢𝗳𝗶𝗰𝗶𝗮𝗹"
+global.canalNombre = "✰ 𝗠𝗶𝗱𝗻𝗶𝗴𝗵𝘁 𝗦𝗼𝗰𝗶𝗲𝘁𝘆 - 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 𝗖𝗵𝗮𝗻𝗻𝗲𝗹"
 global.group = "https://chat.whatsapp.com/CN8JtNy0BTCHb2v5009AL5"
 global.channel = "https://whatsapp.com/channel/0029VbAmwbQBqbr587Zkni1a"
 global.github = "https://github.com/Arlette-Xz/Shiroko-Bot"
