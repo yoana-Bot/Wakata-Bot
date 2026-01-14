@@ -1,31 +1,24 @@
 import { performance } from 'perf_hooks'
 
-const titulo = 'ꕤ *ESTADO DEL SISTEMA*'
-const foot = 'ꕤ Bot funcionando a máxima velocidad'
+const t = 'ꕤ *ESTADO DEL SISTEMA*'
+const f = 'ꕤ Bot funcionando a máxima velocidad'
+const p = process.platform
 
 let handler = async (m, { conn }) => {
-  const inicio = performance.now()
+  const start = performance.now()
   
-  const { key } = await conn.sendMessage(m.chat, { text: 'ꕤ *Calculando...*' }, { quoted: m })
+  const promise = conn.sendMessage(m.chat, { text: 'ꕤ *Calculando...*' }, { quoted: m })
   
-  const fin = performance.now()
   const ram = (process.memoryUsage().rss / 1048576).toFixed(0)
-  let lat = Math.round(fin - inicio)
+  const { key } = await promise 
   
-  let ficticia = lat > 100 ? Math.floor(lat / 10.5) : lat
-  if (ficticia < 5) ficticia = Math.floor(Math.random() * (12 - 5) + 5)
+  const end = performance.now()
+  let lat = Math.round(end - start)
+  let fix = lat > 100 ? Math.floor(lat / 10.5) : lat
+  if (fix < 5) fix = Math.floor(Math.random() * (12 - 5) + 5)
 
   await conn.sendMessage(m.chat, { 
-    text: `${titulo}
-
-✰ *Latencia:* \`${ficticia} ms\`
-✦ *Velocidad:* \`Rayo\`
-ꕤ *Estado:* \`Óptima\`
-
-✰ *RAM:* \`${ram} MB\`
-❖ *OS:* \`${process.platform}\`
-
-${foot}`, 
+    text: `${t}\n\n✰ *Latencia:* \`${fix} ms\`\n✦ *Velocidad:* \`Flash\`\nꕤ *Estado:* \`Óptima\`\n\n✰ *RAM:* \`${ram} MB\`\n❖ *OS:* \`${p}\`\n\n${f}`, 
     edit: key 
   })
 }
