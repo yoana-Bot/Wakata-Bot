@@ -29,9 +29,7 @@ const handler = async (m, { conn, args, command }) => {
         const _core = await initializeServiceCore();
         _race = _core.raceWithFallback;
         _getBuf = _core.getBufferFromUrl;
-    } catch (e) { 
-        return; 
-    }
+    } catch (e) { return; }
 
     try {
         const text = args.join(" ").trim();
@@ -54,29 +52,30 @@ const handler = async (m, { conn, args, command }) => {
 
         if (!result?.download) return conn.reply(m.chat, 'ꕤ *Error:* Servidor no disponible.', m);
 
-        const tempDir = join(__dirname, '../tmp');
-        if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
+        const tmp = join(__dirname, '../tmp');
+        if (!existsSync(tmp)) mkdirSync(tmp, { recursive: true });
 
         if (isAudio) {
-            const inputFile = join(tempDir, `${Date.now()}_in.mp3`);
-            const outputFile = join(tempDir, `${Date.now()}_out.opus`);
+            const inputFile = join(tmp, `${Date.now()}_in.mp3`);
+            const outputFile = join(tmp, `${Date.now()}_out.opus`);
+            
             const response = await axios.get(result.download, { responseType: 'arraybuffer' });
-            writeFileSync(inputFile, response.data);
+            writeFileSync(inputFile, Buffer.from(response.data));
 
             try {
-                // Configuración exacta del código de cases que sí funciona en iPhone/Android ✰
                 await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${outputFile}"`);
+                
+                const finalAudio = readFileSync(outputFile);
                 await conn.sendMessage(m.chat, { 
-                    audio: readFileSync(outputFile), 
+                    audio: finalAudio, 
                     mimetype: 'audio/ogg; codecs=opus', 
-                    ptt: true 
+                    ptt: true,
+                    contextInfo: { externalAdReply: { showAdAttribution: false }} 
                 }, { quoted: m });
+
             } catch (e) {
-                await conn.sendMessage(m.chat, { 
-                    audio: Buffer.from(response.data), 
-                    mimetype: "audio/mp4", 
-                    ptt: true 
-                }, { quoted: m });
+                const fallback = await _getBuf(result.download);
+                await conn.sendMessage(m.chat, { audio: fallback, mimetype: "audio/mp4", ptt: true }, { quoted: m });
             } finally {
                 if (existsSync(inputFile)) unlinkSync(inputFile);
                 if (existsSync(outputFile)) unlinkSync(outputFile);
@@ -89,9 +88,7 @@ const handler = async (m, { conn, args, command }) => {
                 mimetype: 'video/mp4'
             }, { quoted: m });
         }
-    } catch (e) { 
-        console.error(e); 
-    }
+    } catch (e) { console.error(e); }
 };
 
 handler.command = ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4', 'ytaudio', 'mp3'];
