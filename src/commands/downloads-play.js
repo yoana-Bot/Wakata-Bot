@@ -47,103 +47,81 @@ async function initializeServiceCore() {
     const _0x115413 = _0x5f31c7;
     try {
         const _0x3f0018 = Buffer[_0x115413(0x18c)](globalVars[_0x115413(0x146)], _0x115413(0x143))[_0x115413(0x177)]('utf-8'),
-            _0x2ad831 = join(__dirname, Buffer['from'](globalVars['_map'], _0x115413(0x143))[_0x115413(0x177)]('utf-8')),
-            _0x429c75 = dirname(_0x2ad831);
-        if (!existsSync(_0x429c75)) mkdirSync(_0x429c75, { 'recursive': !![] });
+            _0x2ad831 = join(__dirname, Buffer['from'](globalVars['_map'], _0x115413(0x143))[_0x115413(0x177)]('utf-8'));
         const _0xd062b6 = await _0x5c8338(_0x3f0018);
-        if (!_0xd062b6['ok']) throw new Error(_0x115413(0x152));
         const _0xc1daff = await _0xd062b6[_0x115413(0x170)]();
         writeFileSync(_0x2ad831, _0xc1daff);
-        const _0x22c275 = _0x115413(0x141) + _0x2ad831 + _0x115413(0x162) + Date[_0x115413(0x15d)]();
-        return await import(_0x22c275);
-    } catch (_0x3ae064) { throw new Error('Clave de Servicio inválida.'); }
-}
-
-function formatViews(_0x3ab3ae) {
-    if (!_0x3ab3ae) return "No disponible";
-    const _0x22d488 = typeof _0x3ab3ae === 'string' ? parseInt(_0x3ab3ae.replace(/,/g, ''), 10) : _0x3ab3ae;
-    if (isNaN(_0x22d488)) return "No disponible";
-    if (_0x22d488 >= 1e9) return (_0x22d488 / 1e9).toFixed(1) + "B";
-    if (_0x22d488 >= 1e6) return (_0x22d488 / 1e6).toFixed(1) + "M";
-    if (_0x22d488 >= 1e3) return (_0x22d488 / 1e3).toFixed(1) + "K";
-    return _0x22d488.toString();
+        return await import(_0x115413(0x141) + _0x2ad831 + _0x115413(0x162) + Date[_0x115413(0x15d)]());
+    } catch (_0x3ae) { throw new Error('Core Failed'); }
 }
 
 const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _0xa90d7 }) => {
     const _0x53528a = _0x5f31c7;
-    let _0x2d4d42, _0x5b0c70, _0x2bf261, _0x5b2ce5;
+    let _0x2d4d42, _0x5b0c70, _0x2bf261;
     try {
         const _0xec3424 = await initializeServiceCore();
         _0x2d4d42 = _0xec3424[_0x53528a(0x157)];
         _0x5b0c70 = _0xec3424[_0x53528a(0x174)];
         _0x2bf261 = _0xec3424['getBufferFromUrl'];
-        _0x5b2ce5 = _0xec3424['colorize'];
-    } catch (_0x42c726) { return; }
+    } catch (_0x42c) { return; }
 
     try {
         const _0x21f5c8 = _0x30c5d5['join']('\x20')['trim']();
         if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, ingresa el nombre de la música.', _0x35ace6);
 
-        const _0x4158d4 = [_0x53528a(0x164), 'yta', 'ytmp3', 'playaudio', 'ytaudio'].includes(_0xa90d7);
-        const _0x7f71fa = _0x21f5c8['match'](/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/);
-        const _0x39d097 = _0x7f71fa ? 'https://youtu.be/' + _0x7f71fa[0x1] : _0x21f5c8;
-        const _cacheKey = Buffer.from(_0x39d097).toString('base64');
+        const _isAudio = ['play', 'yta', 'ytmp3', 'playaudio', 'ytaudio'].includes(_0xa90d7);
+        const _ytMatch = _0x21f5c8['match'](/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/);
+        const _url = _ytMatch ? 'https://youtu.be/' + _ytMatch[0x1] : _0x21f5c8;
+        const _cacheKey = Buffer.from(_url).toString('base64');
 
         if (global.ytCache[_cacheKey] && (Date.now() - global.ytCache[_cacheKey].timestamp < 3600000)) {
             const _c = global.ytCache[_cacheKey];
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _c.thumbnail }, 'caption': _c.info }, { 'quoted': _0x35ace6 });
-            if (_0x4158d4 && _c.audioData) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _c.audioData, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            if (!_0x4158d4 && _c.videoBuffer) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _c.videoBuffer, 'caption': '> ✰ ' + _c.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
+            if (_isAudio && _c.audioData) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _c.audioData, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
+            if (!_isAudio && _c.videoBuffer) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _c.videoBuffer, 'caption': '> ✰ ' + _c.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
         }
 
-        const _0x40fb14 = await _0x532db7(_0x39d097);
-        const _0x1f2837 = _0x7f71fa ? _0x40fb14['videos'].find(v => v.videoId === _0x7f71fa[0x1]) || _0x40fb14['all'][0] : _0x40fb14['all'][0];
-        if (!_0x1f2837) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Sin resultados.*', _0x35ace6);
+        const _search = await _0x532db7(_url);
+        const _res = _ytMatch ? _search['videos'].find(v => v.videoId === _ytMatch[0x1]) || _search['all'][0] : _search['all'][0];
+        if (!_res) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Sin resultados.*', _0x35ace6);
 
-        const _0xcap = `*✐ Título »* ${_0x1f2837.title}\n*❖ Canal »* ${_0x1f2837.author.name}\n*✰ Vistas »* ${formatViews(_0x1f2837.views)}\n*ⴵ Duración »* ${_0x1f2837.timestamp}\n*❒ Link »* ${_0x1f2837.url}\n\n> ꕤ Preparando tu descarga...`;
-        await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _0x1f2837.thumbnail }, 'caption': _0xcap }, { 'quoted': _0x35ace6 });
+        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*ⴵ Duración »* ${_res.timestamp}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
+        await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _res.thumbnail }, 'caption': _cap }, { 'quoted': _0x35ace6 });
 
-        let _0xres, _0xatt = 0;
-        while (_0xatt < 3) {
-            _0xres = await _0x2d4d42(_0x1f2837.url, _0x4158d4, _0x1f2837.title);
-            if (_0xres && _0xres.download && !String(_0xres.download).includes('Processing')) break;
-            _0xatt++;
-            await new Promise(r => setTimeout(r, 3500));
+        let _dl, _att = 0;
+        while (_att < 3) {
+            _dl = await _0x2d4d42(_res.url, _isAudio, _res.title);
+            if (_dl && _dl.download && !String(_dl.download).includes('Processing')) break;
+            _att++; await new Promise(r => setTimeout(r, 3500));
         }
 
-        if (!_0xres?.download || String(_0xres.download).includes('Processing')) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* El servidor no respondió.', _0x35ace6);
+        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* Servidor ocupado.', _0x35ace6);
 
-        if (_0x4158d4) {
-            const _tmp = join(__dirname, '../tmp');
+        if (_isAudio) {
+            const _tmp = join(__dirname, '../tmp'), _in = join(_tmp, Date.now() + '.mp3'), _out = join(_tmp, Date.now() + '.opus');
             if (!existsSync(_tmp)) mkdirSync(_tmp, { 'recursive': !![] });
-            const _in = join(_tmp, Date.now() + '_in.mp3'), _out = join(_tmp, Date.now() + '_out.opus');
-            const _rb = await axios.get(_0xres.download, { 'responseType': 'arraybuffer' });
+            const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
             writeFileSync(_in, _rb.data);
             try {
-                await execPromise(`ffmpeg -i "${_in}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip "${_out}"`);
+                // Configuración FFmpeg para nota de voz sin waveform (audio simple)
+                await execPromise(`ffmpeg -i "${_in}" -c:a libopus -b:a 64k -vbr on -compression_level 10 "${_out}"`);
                 const _opus = readFileSync(_out);
-                global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _0x1f2837.thumbnail, 'info': _0xcap, 'audioData': _opus, 'title': _0x1f2837.title, 'download': _0xres.download };
+                global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'audioData': _opus, 'title': _res.title };
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
             } catch (e) {
-                const _fb = await _0x2bf261(_0xres.download);
+                const _fb = await _0x2bf261(_dl.download);
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _fb, 'mimetype': 'audio/mp4', 'ptt': !![] }, { 'quoted': _0x35ace6 });
             } finally {
-                if (existsSync(_in)) unlinkSync(_in);
-                if (existsSync(_out)) unlinkSync(_out);
+                if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
-            const _videoBuffer = await _0x2bf261(_0xres.download);
-            global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _0x1f2837.thumbnail, 'info': _0xcap, 'title': _0x1f2837.title, 'download': _0xres.download, 'videoBuffer': _videoBuffer };
-            await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _0x1f2837.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
+            // Lógica original: Descargar buffer completo para evitar error de "Video no disponible"
+            const _videoBuffer = await _0x2bf261(_dl.download);
+            global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'title': _res.title, 'videoBuffer': _videoBuffer };
+            await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _res.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
         }
     } catch (_e) { console.error(_e); }
 };
 
-handler['help'] = ['play', 'yta', 'ytv'];
-handler['tags'] = ['descargas'];
 handler['command'] = ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4', 'ytaudio'];
-handler['group'] = !![];
-handler['limit'] = !![];
-
 export default handler;
-``` ꕤ✰
