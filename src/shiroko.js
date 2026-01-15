@@ -88,6 +88,7 @@ export async function handler(chatUpdate) {
                              Array.isArray(plugin.command) ? plugin.command.some(cmd => cmd instanceof RegExp ? cmd.test(command) : cmd === command) :
                              plugin.command === command
 
+            global.comando = command
             if (!isAccept) continue
 
             if (!isOwners && settings.self) return
@@ -99,15 +100,24 @@ export async function handler(chatUpdate) {
                 else chat.primaryBot = null
             }
 
+            m.plugin = name
             user.commands = (user.commands || 0) + 1
-            if (chat.isBanned && !isAdmin && !isROwner && name !== "group-banchat.js") return
-            if (user.banned && !isROwner) return
 
-            if ((plugin.rowner || plugin.owner) && !isROwner) { global.dfail("owner", m, this); continue }
-            if (plugin.premium && !isPrems) { global.dfail("premium", m, this); continue }
-            if (plugin.group && !m.isGroup) { global.dfail("group", m, this); continue }
-            if (plugin.botAdmin && !isBotAdmin) { global.dfail("botAdmin", m, this); continue }
-            if (plugin.admin && !isAdmin) { global.dfail("admin", m, this); continue }
+            if (chat.isBanned && !isAdmin && !isROwner && name !== "group-banchat.js") {
+                await m.reply(global.msg.aviso.replace('${botname}', global.botname).replace('${usedPrefix}', usedPrefix))
+                return
+            }
+            if (user.banned && !isROwner) {
+                m.reply(global.msg.mensaje.replace('${bannedReason}', user.bannedReason))
+                return
+            }
+
+            const fail = plugin.fail || global.dfail
+            if ((plugin.rowner || plugin.owner) && !isROwner) { fail("owner", m, this); continue }
+            if (plugin.premium && !isPrems) { fail("premium", m, this); continue }
+            if (plugin.group && !m.isGroup) { fail("group", m, this); continue }
+            if (plugin.botAdmin && !isBotAdmin) { fail("botAdmin", m, this); continue }
+            if (plugin.admin && !isAdmin) { fail("admin", m, this); continue }
 
             m.isCommand = true
             const extra = { match, usedPrefix, noPrefix, args, command, text: args.join(" "), conn: this, participants, groupMetadata, userGroup, botGroup, isROwner, isPrems, chatUpdate, user, chat, settings }
@@ -127,4 +137,9 @@ export async function handler(chatUpdate) {
         if (m?.sender && global.db.data.users[m.sender]) global.db.data.users[m.sender].exp += 10
         if (!opts["noprint"]) import("../lib/print.js").then(ptr => ptr.default(m, this)).catch(() => null)
     }
+}
+
+global.dfail = (type, m, conn) => {
+    const msg = global.msg[type]
+    if (msg) return conn.reply(m.chat, msg.replace('${comando}', global.comando), m, rcanal).then(_ => m.react('✖️'))
 }
