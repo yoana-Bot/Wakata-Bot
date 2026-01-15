@@ -67,7 +67,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
 
     try {
         const _0x21f5c8 = _0x30c5d5['join']('\x20')['trim']();
-        if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, ingresa el nombre de la música.', _0x35ace6);
+        if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, ingresa el nombre de lo que buscas.', _0x35ace6);
 
         const _isAudio = ['play', 'yta', 'ytmp3', 'playaudio', 'ytaudio'].includes(_0xa90d7);
         const _ytMatch = _0x21f5c8['match'](/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/);
@@ -95,7 +95,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             _att++; await new Promise(r => setTimeout(r, 3500));
         }
 
-        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* Servidor ocupado.', _0x35ace6);
+        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* El servidor no respondió.', _0x35ace6);
 
         if (_isAudio) {
             const _tmp = join(__dirname, '../tmp'), _in = join(_tmp, Date.now() + '.mp3'), _out = join(_tmp, Date.now() + '.opus');
@@ -103,8 +103,8 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
             writeFileSync(_in, _rb.data);
             try {
-                // Configuración FFmpeg para nota de voz sin waveform (audio simple)
-                await execPromise(`ffmpeg -i "${_in}" -c:a libopus -b:a 64k -vbr on -compression_level 10 "${_out}"`);
+                // FFmpeg configurado para audio Opus plano (sin waveform dinámico) ✰
+                await execPromise(`ffmpeg -i "${_in}" -acodec libopus -ab 128k -ar 48000 -ac 1 "${_out}"`);
                 const _opus = readFileSync(_out);
                 global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'audioData': _opus, 'title': _res.title };
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
@@ -115,7 +115,6 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
                 if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
-            // Lógica original: Descargar buffer completo para evitar error de "Video no disponible"
             const _videoBuffer = await _0x2bf261(_dl.download);
             global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'title': _res.title, 'videoBuffer': _videoBuffer };
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _res.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
