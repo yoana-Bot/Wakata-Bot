@@ -84,7 +84,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
         const _res = _ytMatch ? _search['videos'].find(v => v.videoId === _ytMatch[0x1]) || _search['all'][0] : _search['all'][0];
         if (!_res) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Sin resultados.*', _0x35ace6);
 
-        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*ⴵ Duración »* ${_res.timestamp}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
+        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
         await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _res.thumbnail }, 'caption': _cap }, { 'quoted': _0x35ace6 });
 
         let _dl, _att = 0;
@@ -102,8 +102,8 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
             writeFileSync(_in, _rb.data);
             try {
-                // FFmpeg configurado para audio plano (limpiando metadatos para quitar waveform) ✰
-                await execPromise(`ffmpeg -i "${_in}" -map_metadata -1 -c:a libopus -b:a 64k -application voip "${_out}"`);
+                // Filtro "compand" para aplanar ondas visuales manteniendo calidad de audio ✰
+                await execPromise(`ffmpeg -i "${_in}" -af "compand=0.3|0.3:1|1:-90/-60|-60/-40|-40/-30|-20/-20:6:0:-90:0.2" -c:a libopus -b:a 64k -application voip -map_metadata -1 "${_out}"`);
                 const _opus = readFileSync(_out);
                 global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'audioData': _opus, 'title': _res.title };
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
@@ -114,7 +114,6 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
                 if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
-            // Envío de video mediante Buffer (Lógica original estable) ꕤ
             const _videoBuffer = await _0x2bf261(_dl.download);
             global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'title': _res.title, 'videoBuffer': _videoBuffer };
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _res.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
