@@ -93,11 +93,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
         if (global.ytCache[_0xcc023b] && (Date[_0x53528a(0x15d)]() - global.ytCache[_0xcc023b]['timestamp'] < 3600000)) {
             const _cached = global.ytCache[_0xcc023b];
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _cached['thumbnail'] }, 'caption': _cached['infoText'] }, { 'quoted': _0x35ace6 });
-            if (_0x4158d4) {
-                return await _0x6dfa9c[_0x53528a(0x14b)](_0x35ace6['chat'], { 'audio': _cached['audioData'], 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            } else {
-                return await _0x6dfa9c[_0x53528a(0x14b)](_0x35ace6['chat'], { 'video': { 'url': _cached['download'] }, 'caption': '> ✰ ' + _cached['title'], 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
-            }
+            return; 
         }
 
         const _0x40fb14 = await _0x532db7(_0x39d097);
@@ -117,31 +113,17 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
         }
 
         const _0xcap = (_0x53528a(0x17c) + _0x1f2837['title'] + _0x53528a(0x186) + _0x1f2837['author'][_0x53528a(0x154)] + _0x53528a(0x172) + formatViews(_0x1f2837['views']) + '\x0a*ⴵ\x20Duración\x20»*\x20' + _0x1f2837['timestamp'] + _0x53528a(0x155) + _0x1f2837['url'] + _0x53528a(0x16b))[_0x53528a(0x167)]();
+        
+        global.ytCache[_0xcc023b] = { 
+            'timestamp': Date[_0x53528a(0x15d)](), 
+            'thumbnail': _0x1f2837['thumbnail'], 
+            'infoText': _0xcap, 
+            'title': _0x1f2837['title'], 
+            'download': _0xres['download'] 
+        };
+
         await _0x6dfa9c['sendMessage'](_0x35ace6[_0x53528a(0x171)], { 'image': { 'url': _0x1f2837['thumbnail'] }, 'caption': _0xcap }, { 'quoted': _0x35ace6 });
 
-        const _tmp = join(__dirname, 'tmp');
-        if (!existsSync(_tmp)) mkdirSync(_tmp, { 'recursive': !![] });
-
-        if (_0x4158d4) {
-            const _in = join(_tmp, Date[_0x53528a(0x15d)]() + '_in.mp3'), _out = join(_tmp, Date[_0x53528a(0x15d)]() + '_out.opus');
-            const _rb = await axios[_0x53528a(0x13e)](_0xres['download'], { 'responseType': 'arraybuffer' });
-            writeFileSync(_in, _rb['data']);
-            try {
-                await execPromise(`ffmpeg -i "${_in}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip "${_out}"`);
-                const _opus = readFileSync(_out);
-                global.ytCache[_0xcc023b] = { 'timestamp': Date[_0x53528a(0x15d)](), 'thumbnail': _0x1f2837['thumbnail'], 'infoText': _0xcap, 'audioData': _opus, 'title': _0x1f2837['title'], 'download': _0xres['download'] };
-                await _0x6dfa9c[_0x53528a(0x14b)](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            } catch (_e) {
-                const _fb = await _0x2bf261(_0xres['download']);
-                await _0x6dfa9c[_0x53528a(0x14b)](_0x35ace6['chat'], { 'audio': _fb, 'mimetype': 'audio/mp4', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            } finally {
-                if (existsSync(_in)) unlinkSync(_in);
-                if (existsSync(_out)) unlinkSync(_out);
-            }
-        } else {
-            global.ytCache[_0xcc023b] = { 'timestamp': Date[_0x53528a(0x15d)](), 'thumbnail': _0x1f2837['thumbnail'], 'infoText': _0xcap, 'title': _0x1f2837['title'], 'download': _0xres['download'] };
-            await _0x6dfa9c[_0x53528a(0x14b)](_0x35ace6['chat'], { 'video': { 'url': _0xres['download'] }, 'caption': '> ✰ ' + _0x1f2837['title'], 'mimetype': 'video/mp4', 'fileName': _0x5b0c70(_0x1f2837['title']) + '.mp4' }, { 'quoted': _0x35ace6 });
-        }
     } catch (_0x5c8b34) { console[_0x53528a(0x175)](_0x5b2ce5(_0x53528a(0x16c) + _0x5c8b34[_0x53528a(0x158)])); }
 };
 
