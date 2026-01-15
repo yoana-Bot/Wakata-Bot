@@ -48,20 +48,24 @@ export async function handler(chatUpdate) {
         if (m.isGroup) {
             const now = Date.now()
             const cached = groupMetadataCache.get(mChat)
-            if (cached && (now - cached.timestamp) < 10000) {
+            if (cached && (now - cached.timestamp) < 15000) {
                 groupMetadata = cached.metadata
                 participants = cached.participants
             } else {
                 groupMetadata = await this.groupMetadata(mChat).catch(() => ({}))
-                participants = (groupMetadata.participants || []).map(p => ({ id: p.jid, jid: p.jid, admin: p.admin }))
+                participants = (groupMetadata.participants || []).map(p => ({ id: p.id || p.jid, jid: p.id || p.jid, admin: p.admin }))
                 groupMetadataCache.set(mChat, { metadata: groupMetadata, participants, timestamp: now })
             }
-            userGroup = participants.find(u => u.jid === sender) || {}
-            botGroup = participants.find(u => u.jid === this.user.jid) || {}
+            // Decodificamos el JID para asegurar coincidencia exacta ✰
+            const decodedSender = this.decodeJid(sender)
+            const decodedBot = this.decodeJid(this.user.jid)
+            
+            userGroup = participants.find(u => this.decodeJid(u.id) === decodedSender) || {}
+            botGroup = participants.find(u => this.decodeJid(u.id) === decodedBot) || {}
         }
 
-        const isAdmin = userGroup?.admin || false
-        const isBotAdmin = botGroup?.admin || false
+        const isAdmin = userGroup?.admin === "admin" || userGroup?.admin === "superadmin" || false
+        const isBotAdmin = botGroup?.admin === "admin" || botGroup?.admin === "superadmin" || false
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./commands")
 
         const plugins = Object.entries(global.plugins)
@@ -104,9 +108,8 @@ export async function handler(chatUpdate) {
             if (/^(NJX-|BAE5|B24E)/.test(m.id)) return
 
             if (chat.primaryBot && chat.primaryBot !== this.user.jid) {
-                const primaryBotConn = global.conns?.find(conn => conn.user.jid === chat.primaryBot && conn.ws.socket?.readyState !== ws.CLOSED)
-                const primaryBotInGroup = participants?.some(p => p.jid === chat.primaryBot)
-                if ((primaryBotConn && primaryBotInGroup) || chat.primaryBot === global.conn.user.jid) return 
+                const primaryBotInGroup = participants?.some(p => this.decodeJid(p.id) === this.decodeJid(chat.primaryBot))
+                if (primaryBotInGroup) return 
                 else chat.primaryBot = null
             }
 
@@ -123,7 +126,7 @@ export async function handler(chatUpdate) {
             }
 
             const fail = plugin.fail || global.dfail
-            if (plugin.rowner && !isROwner) { fail("owner", m, this); continue }
+            if ((plugin.rowner || plugin.owner) && !isROwner) { fail("owner", m, this); continue }
             if (plugin.premium && !isPrems) { fail("premium", m, this); continue }
             if (plugin.group && !m.isGroup) { fail("group", m, this); continue }
             if (plugin.botAdmin && !isBotAdmin) { fail("botAdmin", m, this); continue }
@@ -150,7 +153,7 @@ export async function handler(chatUpdate) {
             global.db.data.users[m.sender].exp += m.exp || 0
         }
         if (!opts["noprint"]) {
-            import("../lib/print.js").then(ptr => ptr.default(m, this)).catch(() => {})
+            import("../lib/print.js").then(ptr => ptr.default(m, this)).catch(() => null)
         }
     }
 }
