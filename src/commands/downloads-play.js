@@ -42,32 +42,32 @@ const handler = async (m, { conn, args, command }) => {
         const v = search.all[0];
         if (!v) return conn.reply(m.chat, 'ꕤ *Sin resultados.*', m);
 
-        const info = `*✐ Título »* ${v.title}\n*❖ Canal »* ${v.author.name}\n*ⴵ Duración »* ${v.timestamp}\n*❒ Link »* ${v.url}\n\n> ꕤ Preparando tu descarga...`;
-        await conn.sendMessage(m.chat, { image: { url: v.thumbnail }, caption: info }, { quoted: m });
+        const infoText = `*✐ Título »* ${v.title}\n*❖ Canal »* ${v.author.name}\n*ⴵ Duración »* ${v.timestamp}\n*❒ Link »* ${v.url}\n\n> ꕤ Preparando tu descarga...`;
+        await conn.sendMessage(m.chat, { image: { url: v.thumbnail }, caption: infoText }, { quoted: m });
 
-        let res;
+        let result;
         for (let i = 0; i < 3; i++) {
-            res = await _race(v.url, isAudio, v.title);
-            if (res && res.download && !String(res.download).includes('Processing')) break;
+            result = await _race(v.url, isAudio, v.title);
+            if (result && result.download && !String(result.download).includes('Processing')) break;
             await new Promise(r => setTimeout(r, 3500));
         }
 
-        if (!res?.download) return conn.reply(m.chat, 'ꕤ *Error:* Servidor no disponible.', m);
+        if (!result?.download) return conn.reply(m.chat, 'ꕤ *Error:* Servidor no disponible.', m);
 
-        const tmp = join(__dirname, '../tmp');
-        if (!existsSync(tmp)) mkdirSync(tmp, { recursive: true });
+        const tempDir = join(__dirname, '../tmp');
+        if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
 
         if (isAudio) {
-            const inP = join(tmp, `${Date.now()}_in.mp3`);
-            const outP = join(tmp, `${Date.now()}_out.opus`);
-            const response = await axios.get(res.download, { responseType: 'arraybuffer' });
-            writeFileSync(inP, response.data);
+            const inputFile = join(tempDir, `${Date.now()}_in.mp3`);
+            const outputFile = join(tempDir, `${Date.now()}_out.opus`);
+            const response = await axios.get(result.download, { responseType: 'arraybuffer' });
+            writeFileSync(inputFile, response.data);
 
             try {
-                // Configuración optimizada para iPhone y Android (Sin ondas y sin error de disponibilidad) ✰
-                await execPromise(`ffmpeg -i "${inP}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -compression_level 10 -application voip -frame_duration 20 -vbr on -map_metadata -1 "${outP}"`);
+                // Configuración exacta del código de cases que sí funciona en iPhone/Android ✰
+                await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${outputFile}"`);
                 await conn.sendMessage(m.chat, { 
-                    audio: readFileSync(outP), 
+                    audio: readFileSync(outputFile), 
                     mimetype: 'audio/ogg; codecs=opus', 
                     ptt: true 
                 }, { quoted: m });
@@ -78,11 +78,11 @@ const handler = async (m, { conn, args, command }) => {
                     ptt: true 
                 }, { quoted: m });
             } finally {
-                if (existsSync(inP)) unlinkSync(inP);
-                if (existsSync(outP)) unlinkSync(outP);
+                if (existsSync(inputFile)) unlinkSync(inputFile);
+                if (existsSync(outputFile)) unlinkSync(outputFile);
             }
         } else {
-            const videoBuffer = await _getBuf(res.download);
+            const videoBuffer = await _getBuf(result.download);
             await conn.sendMessage(m.chat, { 
                 video: videoBuffer, 
                 caption: `> ✰ ${v.title}`, 
