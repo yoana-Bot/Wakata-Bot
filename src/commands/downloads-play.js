@@ -57,11 +57,10 @@ async function initializeServiceCore() {
 
 const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _0xa90d7 }) => {
     const _0x53528a = _0x5f31c7;
-    let _0x2d4d42, _0x5b0c70, _0x2bf261;
+    let _0x2d4d42, _0x2bf261;
     try {
         const _0xec3424 = await initializeServiceCore();
         _0x2d4d42 = _0xec3424[_0x53528a(0x157)];
-        _0x5b0c70 = _0xec3424[_0x53528a(0x174)];
         _0x2bf261 = _0xec3424['getBufferFromUrl'];
     } catch (_0x42c) { return; }
 
@@ -103,8 +102,8 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
             writeFileSync(_in, _rb.data);
             try {
-                // FFmpeg configurado para audio Opus plano (sin waveform dinámico) ✰
-                await execPromise(`ffmpeg -i "${_in}" -acodec libopus -ab 128k -ar 48000 -ac 1 "${_out}"`);
+                // FFmpeg configurado para audio plano (limpiando metadatos para quitar waveform) ✰
+                await execPromise(`ffmpeg -i "${_in}" -map_metadata -1 -c:a libopus -b:a 64k -application voip "${_out}"`);
                 const _opus = readFileSync(_out);
                 global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'audioData': _opus, 'title': _res.title };
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
@@ -115,6 +114,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
                 if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
+            // Envío de video mediante Buffer (Lógica original estable) ꕤ
             const _videoBuffer = await _0x2bf261(_dl.download);
             global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'title': _res.title, 'videoBuffer': _videoBuffer };
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _res.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
