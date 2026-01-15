@@ -64,7 +64,8 @@ const handler = async (m, { conn, args, command }) => {
             writeFileSync(inP, response.data);
 
             try {
-                await execPromise(`ffmpeg -i "${inP}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${outP}"`);
+                // Configuración optimizada para iPhone y Android (Sin ondas y sin error de disponibilidad) ✰
+                await execPromise(`ffmpeg -i "${inP}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -compression_level 10 -application voip -frame_duration 20 -vbr on -map_metadata -1 "${outP}"`);
                 await conn.sendMessage(m.chat, { 
                     audio: readFileSync(outP), 
                     mimetype: 'audio/ogg; codecs=opus', 
