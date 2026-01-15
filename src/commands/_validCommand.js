@@ -2,7 +2,8 @@ export async function before(m) {
     if (!m.text || !global.prefix.test(m.text)) return
     
     const usedPrefix = global.prefix.exec(m.text)[0]
-    const command = m.text.slice(usedPrefix.length).trim().split(' ')[0].toLowerCase()
+    const text = m.text.replace(usedPrefix, '').trim()
+    const command = text.split(' ')[0].toLowerCase()
     
     if (!command) return 
 
@@ -12,14 +13,17 @@ export async function before(m) {
     
     if (chat.modoadmin || settings.self || (chat.isMute && !owner) || (chat.isBanned && !owner)) return
 
-    const plugins = global.plugins || {}
-    const isCommand = Object.values(plugins).some(p => 
-        p.command && (Array.isArray(p.command) ? p.command.includes(command) : p.command instanceof RegExp ? p.command.test(command) : p.command === command)
-    )
+    const plugins = global.plugins
+    const isCommand = Object.values(plugins).some(p => {
+        if (!p.command) return false
+        if (Array.isArray(p.command)) return p.command.includes(command)
+        if (p.command instanceof RegExp) return p.command.test(command)
+        return p.command === command
+    })
 
     if (!isCommand) {
         await this.sendMessage(m.chat, { 
-            text: `ꕤ *Comando no encontrado*\n\n• El comando \`${command}\` no existe\n• Usa *${usedPrefix}menu* para ver la lista` 
+            text: `ꕤ *Comando no encontrado*\n\n• El comando \`${usedPrefix}${command}\` no existe\n• Usa *${usedPrefix}menu* para ver la lista` 
         }, { quoted: m })
     }
 }
