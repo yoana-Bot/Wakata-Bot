@@ -70,13 +70,12 @@ export async function handler(chatUpdate) {
 
         const isRAdmin = userGroup?.admin === "superadmin"
         const isAdmin = isRAdmin || userGroup?.admin === "admin"
-        const isBotAdmin = botGroup?.admin || false
+        const isBotAdmin = botGroup?.admin === "admin" || botGroup?.admin === "superadmin" || false
+        
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./commands")
 
-        const strRegex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
-        const plugins = Object.entries(global.plugins)
-
-        for (const [name, plugin] of plugins) {
+        for (const name in global.plugins) {
+            const plugin = global.plugins[name]
             if (!plugin || plugin.disabled) continue
 
             if (typeof plugin.all === "function") {
@@ -88,11 +87,11 @@ export async function handler(chatUpdate) {
             const pluginPrefix = plugin.customPrefix || this.prefix || global.prefix
             let match = null
 
+            const strRegex = (str) => str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
             if (m.text) {
-                const prefixStr = Array.isArray(pluginPrefix) ? pluginPrefix.map(p => strRegex(p)).join('|') : strRegex(pluginPrefix)
-                const regex = new RegExp(`^(${prefixStr})`)
-                const execResult = regex.exec(m.text)
-                if (execResult) match = [execResult, regex]
+                const prefixRegex = pluginPrefix instanceof RegExp ? pluginPrefix : new RegExp(`^(${[].concat(pluginPrefix).map(p => strRegex(p)).join('|')})`)
+                const execResult = prefixRegex.exec(m.text)
+                if (execResult) match = [execResult, prefixRegex]
             }
 
             if (typeof plugin.before === "function") {
