@@ -56,28 +56,28 @@ const handler = async (msg, { conn, args, command }) => {
             await new Promise(r => setTimeout(r, 2500));
         }
 
-        if (!result?.download) return conn.reply(msg.chat, `✰ El servidor está lento. Intenta de nuevo en un momento.`, msg);
+        if (!result?.download) return conn.reply(msg.chat, `✰ Error de red. Intenta de nuevo.`, msg);
 
         const tempDir = join(__dirname, '../tmp');
         if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
 
         if (isAudio) {
             const inputFile = join(tempDir, `${Date.now()}_in.mp3`);
-            const outputFile = join(tempDir, `${Date.now()}_out.opus`);
+            const outputFile = join(tempDir, `${Date.now()}_out.mp3`);
             
-            const response = await axios.get(result.download, { responseType: 'arraybuffer', timeout: 30000 });
+            const response = await axios.get(result.download, { responseType: 'arraybuffer' });
             writeFileSync(inputFile, Buffer.from(response.data));
 
             try {
-                // Configuración optimizada para evitar el error "Audio no disponible" en iPhone
-                await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on -map_metadata -1 "${outputFile}"`);
+                // Configuración MP3 compatible con iPhone pero enviada como PTT ✰
+                await execPromise(`ffmpeg -i "${inputFile}" -vn -c:a libmp3lame -b:a 128k -ar 44100 -ac 1 "${outputFile}" -y`);
                 
                 await conn.sendMessage(msg.chat, { 
                     audio: readFileSync(outputFile), 
-                    mimetype: 'audio/ogg; codecs=opus', 
-                    ptt: true,
-                    contextInfo: { externalAdReply: { showAdAttribution: false }}
+                    mimetype: 'audio/mpeg', 
+                    ptt: true 
                 }, { quoted: msg });
+
             } catch (e) {
                 const fallback = await _getBuf(result.download);
                 await conn.sendMessage(msg.chat, { audio: fallback, mimetype: "audio/mp4", ptt: true }, { quoted: msg });
