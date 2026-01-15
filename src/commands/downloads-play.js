@@ -66,35 +66,29 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
 
     try {
         const _0x21f5c8 = _0x30c5d5['join']('\x20')['trim']();
-        if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, ingresa el nombre de lo que buscas.', _0x35ace6);
+        if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, ingresa el nombre de la canción.', _0x35ace6);
 
         const _isAudio = ['play', 'yta', 'ytmp3', 'playaudio', 'ytaudio'].includes(_0xa90d7);
         const _ytMatch = _0x21f5c8['match'](/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/);
         const _url = _ytMatch ? 'https://youtu.be/' + _ytMatch[0x1] : _0x21f5c8;
         const _cacheKey = Buffer.from(_url).toString('base64');
 
-        if (global.ytCache[_cacheKey] && (Date.now() - global.ytCache[_cacheKey].timestamp < 3600000)) {
-            const _c = global.ytCache[_cacheKey];
-            await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _c.thumbnail }, 'caption': _c.info }, { 'quoted': _0x35ace6 });
-            if (_isAudio && _c.audioData) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _c.audioData, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            if (!_isAudio && _c.videoBuffer) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _c.videoBuffer, 'caption': '> ✰ ' + _c.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
-        }
-
         const _search = await _0x532db7(_url);
         const _res = _ytMatch ? _search['videos'].find(v => v.videoId === _ytMatch[0x1]) || _search['all'][0] : _search['all'][0];
         if (!_res) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Sin resultados.*', _0x35ace6);
 
-        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
+        // Envío de información completa según tu solicitud ꕤ✰
+        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*ⴵ Duración »* ${_res.timestamp}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
         await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _res.thumbnail }, 'caption': _cap }, { 'quoted': _0x35ace6 });
 
-        let _dl, _att = 0;
-        while (_att < 3) {
+        let _dl;
+        for (let i = 0; i < 3; i++) {
             _dl = await _0x2d4d42(_res.url, _isAudio, _res.title);
-            if (_dl && _dl.download && !String(_dl.download).includes('Processing')) break;
-            _att++; await new Promise(r => setTimeout(r, 3500));
+            if (_dl && _dl.download) break;
+            await new Promise(r => setTimeout(r, 2000));
         }
 
-        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* El servidor no respondió.', _0x35ace6);
+        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* No se pudo procesar.', _0x35ace6);
 
         if (_isAudio) {
             const _tmp = join(__dirname, '../tmp'), _in = join(_tmp, Date.now() + '.mp3'), _out = join(_tmp, Date.now() + '.opus');
@@ -102,10 +96,9 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
             writeFileSync(_in, _rb.data);
             try {
-                // Filtro "compand" para aplanar ondas visuales manteniendo calidad de audio ✰
-                await execPromise(`ffmpeg -i "${_in}" -af "compand=0.3|0.3:1|1:-90/-60|-60/-40|-40/-30|-20/-20:6:0:-90:0.2" -c:a libopus -b:a 64k -application voip -map_metadata -1 "${_out}"`);
+                // Técnica de bitrate fijo ultra-bajo para línea plana visual ✰
+                await execPromise(`ffmpeg -i "${_in}" -map_metadata -1 -af "volume=1.0" -c:a libopus -b:a 5k -vbr off -application voip -ac 1 "${_out}"`);
                 const _opus = readFileSync(_out);
-                global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'audioData': _opus, 'title': _res.title };
                 await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _opus, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
             } catch (e) {
                 const _fb = await _0x2bf261(_dl.download);
@@ -114,8 +107,8 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
                 if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
+            // Lógica original de video por Buffer ꕤ
             const _videoBuffer = await _0x2bf261(_dl.download);
-            global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _res.thumbnail, 'info': _cap, 'title': _res.title, 'videoBuffer': _videoBuffer };
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _res.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
         }
     } catch (_e) { console.error(_e); }
