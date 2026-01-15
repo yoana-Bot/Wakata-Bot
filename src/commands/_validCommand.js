@@ -1,4 +1,4 @@
-Export async function before(m) {
+export async function before(m) {
     if (!m.text || !global.prefix.test(m.text)) return
     
     const usedPrefix = global.prefix.exec(m.text)[0]
@@ -12,7 +12,7 @@ Export async function before(m) {
     
     if (chat.modoadmin || settings.self || (chat.isMute && !owner) || (chat.isBanned && !owner)) return
 
-    const isCommand = Object.values(global.plugins || {}).some(p => 
+    const isCommand = Object.values(global.plugins).some(p => 
         p.command && (Array.isArray(p.command) ? p.command.includes(command) : p.command === command)
     )
 
