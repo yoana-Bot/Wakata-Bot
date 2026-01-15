@@ -8,28 +8,23 @@ const host = hostname().slice(0, 8)
 const cpuLen = _cpus().length
 
 let handler = async (m, { conn }) => {
-    const db = global.db.data
-    const users = Object.values(db.users)
-    
     const usage = (100 - (100 * _cpus().reduce((a, c) => a + c.times.idle, 0) / _cpus().reduce((a, c) => a + Object.values(c.times).reduce((x, y) => x + y, 0), 0))).toFixed(1) + '%'
 
-    const system = `「✦」Estado de *${global.botname}*
+    await conn.sendMessage(m.chat, { text: `「✦」Estado de *${global.botname}*
 
 ❒ RAM [MAIN]: *${format(process.memoryUsage().rss)}*
 ❒ CPU (x${cpuLen}): *${usage}*
 ✿ Bots activos: *${global.conns.filter(c => c.user && c.ws?.socket?.readyState !== 3).length}*
-✐ Comandos: *${toNum(users.reduce((a, u) => a + (u.commands || 0), 0))}*
-❒ Usuarios: *${Object.keys(db.users).length.toLocaleString()}*
-❒ Grupos: *${Object.keys(db.chats).length.toLocaleString()}*
+✐ Comandos: *${toNum(Object.values(global.db.data.users).reduce((a, u) => a + (u.commands || 0), 0))}*
+❒ Usuarios: *${Object.keys(global.db.data.users).length.toLocaleString()}*
+❒ Grupos: *${Object.keys(global.db.data.chats).length.toLocaleString()}*
 ❒ Plugins: *${Object.values(global.plugins).filter(v => v.help && v.tags).length}*
 
 ◤ Sistema:
-    *✦ Plataforma:* ${plt} ${arch}
-    *✦ RAM Total:* ${format(totalmem())}
-    *✦ RAM Usada:* ${format(totalmem() - freemem())}
-    *✦ Host:* ${host}...`
-
-    await conn.sendMessage(m.chat, { text: system }, { quoted: m })
+    • *Plataforma:* ${plt} ${arch}
+    • *RAM Total:* ${format(totalmem())}
+    • *RAM Usada:* ${format(totalmem() - freemem())}
+    • *Host:* ${host}...` }, { quoted: m })
 }
 
 handler.help = ['estado']
