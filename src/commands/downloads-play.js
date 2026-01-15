@@ -38,7 +38,6 @@ const handler = async (msg, { conn, args, command }) => {
         const video = search.videos[0];
         if (!video) return conn.reply(msg.chat, `✰ No se encontraron resultados.`, msg);
 
-        // Estilo de texto idéntico al de cases ✰
         let infoText = `*✧ ‧₊˚* \`YOUTUBE ${isAudio ? 'AUDIO' : 'VIDEO'}\` *୧ֹ˖ ⑅ ࣪⊹*\n`;
         infoText += `⊹₊ ˚‧︵‿₊୨୧₊‿︵‧ ˚ ₊⊹\n`;
         infoText += `› ✰ *Título:* ${video.title}\n`;
@@ -54,10 +53,10 @@ const handler = async (msg, { conn, args, command }) => {
         for (let i = 0; i < 3; i++) {
             result = await _race(video.url, isAudio, video.title);
             if (result && result.download && !String(result.download).includes('Processing')) break;
-            await new Promise(r => setTimeout(r, 3500));
+            await new Promise(r => setTimeout(r, 2500));
         }
 
-        if (!result?.download) return conn.reply(msg.chat, `✰ El servidor sigue procesando el archivo. Intenta de nuevo en un momento.`, msg);
+        if (!result?.download) return conn.reply(msg.chat, `✰ El servidor está lento. Intenta de nuevo en un momento.`, msg);
 
         const tempDir = join(__dirname, '../tmp');
         if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
@@ -66,17 +65,18 @@ const handler = async (msg, { conn, args, command }) => {
             const inputFile = join(tempDir, `${Date.now()}_in.mp3`);
             const outputFile = join(tempDir, `${Date.now()}_out.opus`);
             
-            const response = await axios.get(result.download, { responseType: 'arraybuffer' });
+            const response = await axios.get(result.download, { responseType: 'arraybuffer', timeout: 30000 });
             writeFileSync(inputFile, Buffer.from(response.data));
 
             try {
-                // Lógica de audio exacta de cases ✰
-                await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on "${outputFile}"`);
+                // Configuración optimizada para evitar el error "Audio no disponible" en iPhone
+                await execPromise(`ffmpeg -i "${inputFile}" -c:a libopus -b:a 128k -ar 48000 -ac 1 -application voip -frame_duration 20 -vbr on -map_metadata -1 "${outputFile}"`);
                 
                 await conn.sendMessage(msg.chat, { 
                     audio: readFileSync(outputFile), 
                     mimetype: 'audio/ogg; codecs=opus', 
-                    ptt: true 
+                    ptt: true,
+                    contextInfo: { externalAdReply: { showAdAttribution: false }}
                 }, { quoted: msg });
             } catch (e) {
                 const fallback = await _getBuf(result.download);
@@ -86,7 +86,6 @@ const handler = async (msg, { conn, args, command }) => {
                 if (existsSync(outputFile)) unlinkSync(outputFile);
             }
         } else {
-            // Lógica de video por Buffer original ꕤ
             const videoBuffer = await _getBuf(result.download);
             await conn.sendMessage(msg.chat, { 
                 video: videoBuffer, 
