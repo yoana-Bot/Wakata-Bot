@@ -60,8 +60,7 @@ async function initializeServiceCore() {
 }
 
 function formatViews(_0x3ab3ae) {
-    const _0x5e10ed = _0x5f31c7;
-    if (!_0x3ab3ae) return _0x5e10ed(0x146);
+    if (!_0x3ab3ae) return "No disponible";
     const _0x22d488 = typeof _0x3ab3ae === 'string' ? parseInt(_0x3ab3ae.replace(/,/g, ''), 10) : _0x3ab3ae;
     if (isNaN(_0x22d488)) return "No disponible";
     if (_0x22d488 >= 1e9) return (_0x22d488 / 1e9).toFixed(1) + "B";
@@ -94,7 +93,7 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
             const _c = global.ytCache[_cacheKey];
             await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'image': { 'url': _c.thumbnail }, 'caption': _c.info }, { 'quoted': _0x35ace6 });
             if (_0x4158d4 && _c.audioData) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'audio': _c.audioData, 'mimetype': 'audio/ogg; codecs=opus', 'ptt': !![] }, { 'quoted': _0x35ace6 });
-            if (!_0x4158d4) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': { 'url': _c.download }, 'caption': '> ✰ ' + _c.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
+            if (!_0x4158d4 && _c.videoBuffer) return await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _c.videoBuffer, 'caption': '> ✰ ' + _c.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
         }
 
         const _0x40fb14 = await _0x532db7(_0x39d097);
@@ -133,8 +132,9 @@ const handler = async (_0x35ace6, { conn: _0x6dfa9c, args: _0x30c5d5, command: _
                 if (existsSync(_out)) unlinkSync(_out);
             }
         } else {
-            global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _0x1f2837.thumbnail, 'info': _0xcap, 'title': _0x1f2837.title, 'download': _0xres.download };
-            await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': { 'url': _0xres.download }, 'caption': '> ✰ ' + _0x1f2837.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
+            const _videoBuffer = await _0x2bf261(_0xres.download);
+            global.ytCache[_cacheKey] = { 'timestamp': Date.now(), 'thumbnail': _0x1f2837.thumbnail, 'info': _0xcap, 'title': _0x1f2837.title, 'download': _0xres.download, 'videoBuffer': _videoBuffer };
+            await _0x6dfa9c['sendMessage'](_0x35ace6['chat'], { 'video': _videoBuffer, 'caption': '> ✰ ' + _0x1f2837.title, 'mimetype': 'video/mp4' }, { 'quoted': _0x35ace6 });
         }
     } catch (_e) { console.error(_e); }
 };
@@ -146,3 +146,4 @@ handler['group'] = !![];
 handler['limit'] = !![];
 
 export default handler;
+``` ꕤ✰
