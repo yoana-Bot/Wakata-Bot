@@ -2,17 +2,14 @@ import _0x532db7 from 'yt-search';
 import { writeFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import _0x5c8338 from 'node-fetch';
 
-const execPromise = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 function formatViews(v) {
     if (!v) return "0";
-    const num = typeof v === 'string' ? parseInt(v.replace(/[^0-9]/g, ''), 10) : v;
+    const num = typeof v === 'string' ? parseInt(v.replace(/,/g, ''), 10) : v;
     if (isNaN(num)) return "0";
     if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
     if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
@@ -77,6 +74,7 @@ const handler = async (msg, { conn, args, command }) => {
         const fileName = _clean ? _clean(video.title) : 'archivo';
 
         if (isAudio) {
+            // Usamos audio/mp4 que es el que me pasaste que funciona bien ✰
             await conn.sendMessage(msg.chat, { 
                 audio: buffer, 
                 fileName: `${fileName}.mp3`, 
