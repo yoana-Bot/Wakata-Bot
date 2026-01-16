@@ -1,12 +1,12 @@
 import PhoneNumber from 'awesome-phonenumber'
 
 const BOT_OWNER_INFO = {
-    numero: '573114910796',
-    nombre: 'Arlette Xz',
+    numero: '819095203873',
+    nombre: '٭˙. Nexy . ᝰ.ᐟ .`⊹',
     cargo: 'Dueña Principal',
     nota: 'Creadora del Bot',
-    region: '🇨🇴 Colombia',
-    web: 'https://github.com/speed3xz',
+    region: 'Japon 🇯🇵',
+    web: 'https://github.com/Arlette-Xz',
 }
 
 function createVCard(contactData, biography) {
