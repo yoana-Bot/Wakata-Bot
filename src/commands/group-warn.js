@@ -27,9 +27,7 @@ const handler = async (m, { conn, text, command, usedPrefix }) => {
         const chatData = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
         const warnLimit = chatData.warnLimit || 3
         
-        if (who) {
-            if (!global.db.data.users[who]) global.db.data.users[who] = { warn: 0 }
-        }
+        if (who && !global.db.data.users[who]) global.db.data.users[who] = { warn: 0 }
 
         switch (command) {
             case 'advertencia': 
@@ -39,6 +37,8 @@ const handler = async (m, { conn, text, command, usedPrefix }) => {
                 if (who === ownerGroup) return conn.reply(m.chat, `ꕤ No puedo advertir al dueño del grupo.`, m, ctxWarn)
                 
                 let motivo = text ? text.replace(/@\d+/g, '').trim() : 'Sin especificar'
+                if (!motivo) motivo = 'Sin especificar'
+
                 global.db.data.users[who].warn += 1
                 const warnCount = global.db.data.users[who].warn
                 
@@ -47,7 +47,13 @@ const handler = async (m, { conn, text, command, usedPrefix }) => {
                 if (warnCount >= warnLimit) {
                     global.db.data.users[who].warn = 0
                     await conn.reply(m.chat, `ꕤ *@${who.split('@')[0]}* superó el límite de ${warnLimit} advertencias y será eliminado.`, m, { mentions: [who] })
-                    await conn.groupParticipantsUpdate(m.chat, [who], 'remove')
+                    
+                    try {
+                        await conn.groupParticipantsUpdate(m.chat, [who], 'remove')
+                    } catch (e) {
+                        console.error('Error al remover usuario:', e)
+                        conn.reply(m.chat, `ꕤ No pude eliminar al usuario. Asegúrate de que soy administrador.`, m)
+                    }
                 }
                 break
             }
@@ -68,21 +74,13 @@ const handler = async (m, { conn, text, command, usedPrefix }) => {
                 await conn.sendFile(m.chat, pp, 'img.jpg', list, m, null, { mentions: conn.parseMention(list) })
                 break
             }
-            
-            case 'setwarnlimit': {
-                let limit = parseInt(text)
-                if (!text || isNaN(limit)) return conn.reply(m.chat, `ꕤ Especifica un número.`, m, ctxErr)
-                chatData.warnLimit = limit
-                await conn.reply(m.chat, `ꕤ Nuevo límite: *${chatData.warnLimit}*`, m, ctxOk)
-                break
-            }
         }
     } catch (e) {
         conn.reply(m.chat, `ꕤ Error: ${e.message}`, m, ctxErr)
     }
 }
 
-handler.command = ['advertencia', 'warn', 'addwarn', 'delwarn', 'unwarn', 'listadv', 'advlist', 'setwarnlimit', 'warnlimit']
+handler.command = ['advertencia', 'warn', 'addwarn', 'delwarn', 'unwarn', 'listadv', 'advlist']
 handler.group = handler.admin = handler.botAdmin = true
 
 export default handler
