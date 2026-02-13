@@ -4,9 +4,11 @@
 </h1>
 
 ---
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/wakata-bot.png" width="300"/>
 </p>
+
 ---
 
 ### 🏆 **Poder y Precisión en un Solo Bot**  
@@ -34,28 +36,19 @@
 ```bash
 termux-setup-storage
 
-
-
 apt update && apt upgrade
-
 
 pkg install -y git nodejs ffmpeg imagemagick yarn
 
-
 git clone https://github.com/Arlette-Xz/Shiroko-Bot
 
-
 cd Shiroko-Bot
 
-
 cd Shiroko-Bot
-
 
 yarn install
 
-
 npm install
-
 
 npm startnpm start
 
