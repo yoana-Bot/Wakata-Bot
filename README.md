@@ -3,9 +3,10 @@
 </h1>
 
 ---
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/golfitoMartinez/golfito-Bot-MD/main/wakata-bot.png" width="300"/>
-</p>  
+  <img src="https://raw.githubusercontent.com/yoana-Bot/Wakata-Bot/main/WAKATA-BOT.png" width="300"/>
+</p>
 
 ---
 
