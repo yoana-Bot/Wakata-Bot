@@ -59,10 +59,6 @@ npm install
 
 npm startnpm start
 
-
-
-
-
 ---
 
 </details>
