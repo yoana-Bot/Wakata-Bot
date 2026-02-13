@@ -4,9 +4,7 @@
 
 ---
 <p align="center">
-  <img src="https://files.catbox.moe/mll277.jpg" alt="Menú Principal" 
-width="200" height="200" alt="
-avaricia"/></a>
+  <img src="https://raw.githubusercontent.com/golfitoMartinez/golfito-Bot-MD/main/wakata-bot.png" width="300"/>
 </p>  
 
 ---
