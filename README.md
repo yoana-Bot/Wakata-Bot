@@ -22,7 +22,7 @@
   <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&duration=4000&pause=1000&color=0099FF&width=435&lines=⚔️+CLONA+EL+REPOSITORIO+⚔️" alt="Typing SVG">
 </a> 
 
-
+---
 
 #### **`👑 Instalación por termux`**
 
